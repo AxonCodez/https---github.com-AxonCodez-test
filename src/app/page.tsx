@@ -105,7 +105,7 @@ export default function Home() {
           <CardContent className="p-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold">Live Queues</h2>
-              <Link href="#" className="text-sm font-semibold text-primary">See all queues</Link>
+              <Link href="/queues" className="text-sm font-semibold text-primary">See all queues</Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {queueServices.map(service => (
@@ -151,7 +151,7 @@ export default function Home() {
             <Plus className="w-8 h-8" />
           </Button>
           <Link href="/queues">
-            <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-muted-foreground">
+            <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-primary">
               <BarChart3 className="w-6 h-6" />
               <span className="text-xs">Queues</span>
             </Button>
