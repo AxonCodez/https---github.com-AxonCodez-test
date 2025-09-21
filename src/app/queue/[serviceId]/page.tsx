@@ -78,6 +78,7 @@ export default function QueuePage() {
 
   const peopleAhead = userToken && currentToken !== null ? userToken - currentToken - 1 : 0;
   const estimatedWaitTime = peopleAhead > 0 ? peopleAhead * 2 : 0; // Assuming 2 mins per person
+  const isMyTurn = userToken !== null && currentToken !== null && userToken <= currentToken;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -101,11 +102,11 @@ export default function QueuePage() {
             <div className="grid grid-cols-2 gap-4 w-full text-center">
               <div className="bg-muted p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">Now Serving</p>
-                {isLoading ? <Skeleton className="h-10 w-20 mx-auto mt-1" /> : <p className="text-4xl font-bold text-primary">{`#${currentToken}`}</p>}
+                {isLoading ? <Skeleton className="h-10 w-20 mx-auto mt-1" /> : <p className="text-4xl font-bold text-primary">{`#${currentToken ?? 0}`}</p>}
               </div>
               <div className="bg-muted p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">Total in Queue</p>
-                 {isLoading ? <Skeleton className="h-10 w-20 mx-auto mt-1" /> : <p className="text-4xl font-bold">{totalTokens}</p>}
+                 {isLoading ? <Skeleton className="h-10 w-20 mx-auto mt-1" /> : <p className="text-4xl font-bold">{totalTokens ?? (currentToken ?? 0)}</p>}
               </div>
             </div>
 
@@ -115,19 +116,21 @@ export default function QueuePage() {
                   <p className="text-lg font-medium text-primary">Your Token</p>
                   <p className="text-6xl font-extrabold text-primary my-2">#{userToken}</p>
                 </div>
-                {currentToken !== null && userToken > currentToken ? (
+                {isMyTurn ? (
+                  <p className="text-success font-semibold text-lg animate-pulse">It's your turn!</p>
+                ) : (
                   <div className="space-y-2">
                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
                       <Users className="h-4 w-4" />
                       <span>{peopleAhead} {peopleAhead === 1 ? 'person' : 'people'} ahead of you</span>
                     </div>
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <Timer className="h-4 w-4" />
-                      <span>Estimated wait: ~{estimatedWaitTime} minutes</span>
-                    </div>
+                    {peopleAhead > 0 && (
+                      <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                        <Timer className="h-4 w-4" />
+                        <span>Estimated wait: ~{estimatedWaitTime} minutes</span>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <p className="text-success font-semibold">It's your turn!</p>
                 )}
                 <Button onClick={handleLeaveQueue} variant="outline" className="w-full mt-2">
                   <LogOut className="mr-2 h-4 w-4" />
