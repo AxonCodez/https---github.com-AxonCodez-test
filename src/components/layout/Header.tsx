@@ -79,8 +79,10 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link href="/login" className={cn(buttonVariants({ variant: "outline" }), isTransparentBg ? 'bg-white/20 border-white/50 text-white hover:bg-white/30' : '')}>
-                Login
+            <Link href="/login" passHref legacyBehavior>
+                <a className={cn(buttonVariants({ variant: "outline" }), isTransparentBg ? 'bg-white/20 border-white/50 text-white hover:bg-white/30' : '')}>
+                    Login
+                </a>
             </Link>
           )}
            <Button variant="ghost" size="icon" className={`h-10 w-10 rounded-full ${textColorClass}`}>
