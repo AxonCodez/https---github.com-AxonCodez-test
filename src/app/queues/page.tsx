@@ -6,7 +6,7 @@ import { services } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import Link from 'next/link';
-import { Ticket, ArrowRight, UserCheck } from 'lucide-react';
+import { Ticket, ArrowRight, UserCheck, Home as HomeIcon, Search, Plus, BarChart3, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type UserToken = {
