@@ -7,15 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Header } from "@/components/layout/Header";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 
 export default function RegisterPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, register } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,30 +30,24 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      if (userCredential.user) {
-        await updateProfile(userCredential.user, {
-            displayName: name,
-        });
-      }
+    
+    const success = await register(name, email, password);
 
+    if (success) {
       toast({
         title: "Registration Successful",
-        description: "Your account has been created.",
+        description: "Your account has been created. You are now logged in.",
       });
       router.push('/');
-    } catch (error: any) {
-      console.error("Registration error:", error);
+    } else {
       toast({
         variant: "destructive",
         title: "Registration Failed",
-        description: error.message || "Could not create account. Please try again.",
+        description: "A user with this email already exists.",
       });
-    } finally {
-      setIsSubmitting(false);
     }
+
+    setIsSubmitting(false);
   };
 
   if (loading || user) {

@@ -2,14 +2,26 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 
+// NOTE: This is a mock authentication system for prototyping.
+// It uses localStorage and is NOT secure for production use.
+
+// Define the shape of our user object
+interface DemoUser {
+  uid: string;
+  email: string;
+  displayName: string;
+  photoURL?: string;
+  password?: string; // Only for storage, not for client state
+}
+
 interface AuthContextType {
-  user: User | null;
+  user: Omit<DemoUser, 'password'> | null;
   isAdmin: boolean;
   loading: boolean;
+  login: (email: string, pass: string) => Promise<boolean>;
+  register: (name: string, email: string, pass: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -17,43 +29,102 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isAdmin: false,
   loading: true,
+  login: async () => false,
+  register: async () => false,
   logout: () => {},
 });
 
-// NOTE: In a real app, you would have a more robust way to identify admins.
-// This could be a custom claim in the JWT, or a separate database collection.
-// For this demo, we'll hardcode an admin email.
 const ADMIN_EMAILS = ['admin@example.com'];
+const LOCAL_STORAGE_USERS_KEY = 'demo_users';
+const LOCAL_STORAGE_SESSION_KEY = 'demo_session';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<Omit<DemoUser, 'password'> | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // On initial load, check for a user session in localStorage
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    try {
+      const sessionUserJson = localStorage.getItem(LOCAL_STORAGE_SESSION_KEY);
+      if (sessionUserJson) {
+        setUser(JSON.parse(sessionUserJson));
+      }
+    } catch (error) {
+      console.error("Failed to parse user from localStorage", error);
+      localStorage.removeItem(LOCAL_STORAGE_SESSION_KEY);
+    } finally {
       setLoading(false);
-    });
-
-    return () => unsubscribe();
+    }
   }, []);
+  
+  // Helper to get all users from localStorage
+  const getUsers = (): DemoUser[] => {
+    const usersJson = localStorage.getItem(LOCAL_STORAGE_USERS_KEY);
+    return usersJson ? JSON.parse(usersJson) : ADMIN_EMAILS.map(email => ({
+      uid: `admin-${Math.random()}`, email, displayName: 'Administrator', password: 'password'
+    }));
+  };
 
-  const isAdmin = user ? ADMIN_EMAILS.includes(user.email || '') : false;
+  // Helper to save users to localStorage
+  const saveUsers = (users: DemoUser[]) => {
+    localStorage.setItem(LOCAL_STORAGE_USERS_KEY, JSON.stringify(users));
+  };
 
-  const logout = async () => {
-    await signOut(auth);
+  const login = async (email: string, pass: string): Promise<boolean> => {
+    const users = getUsers();
+    const foundUser = users.find(u => u.email === email && u.password === pass);
+
+    if (foundUser) {
+      const { password, ...userToSave } = foundUser;
+      setUser(userToSave);
+      localStorage.setItem(LOCAL_STORAGE_SESSION_KEY, JSON.stringify(userToSave));
+      return true;
+    }
+    return false;
+  };
+
+  const register = async (name: string, email: string, pass: string): Promise<boolean> => {
+    const users = getUsers();
+    if (users.some(u => u.email === email)) {
+      return false; // User already exists
+    }
+    
+    const newUser: DemoUser = {
+      uid: `user-${Date.now()}`,
+      email,
+      displayName: name,
+      password: pass,
+    };
+
+    saveUsers([...users, newUser]);
+    
+    // Automatically log in the new user
+    const { password, ...userToSave } = newUser;
+    setUser(userToSave);
+    localStorage.setItem(LOCAL_STORAGE_SESSION_KEY, JSON.stringify(userToSave));
+    
+    return true;
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem(LOCAL_STORAGE_SESSION_KEY);
     router.push('/');
   };
+
+  const isAdmin = user ? ADMIN_EMAILS.includes(user.email || '') : false;
 
   const value = {
     user,
     isAdmin,
     loading,
+    login,
+    register,
     logout,
   };
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

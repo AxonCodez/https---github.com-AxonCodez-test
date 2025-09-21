@@ -7,13 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Header } from "@/components/layout/Header";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('admin@example.com');
@@ -21,27 +20,30 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
+    
+    // The new login function returns a boolean indicating success
+    const success = await login(email, password);
+
+    if (success) {
       toast({
         title: "Admin Login Successful",
         description: "Redirecting to admin portal...",
       });
       router.push('/admin');
-    } catch (error: any) {
-      console.error("Admin login error:", error);
+    } else {
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error.message || "Invalid credentials. Please try again.",
+        description: "Invalid credentials. Please try again.",
       });
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   return (
@@ -58,7 +60,7 @@ export default function AdminLoginPage() {
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  For this demo, you must first create this user in the Firebase Authentication console.
+                  For this demo, use the default credentials. A real app would have a secure backend.
                 </AlertDescription>
               </Alert>
               <div className="grid w-full items-center gap-1.5">

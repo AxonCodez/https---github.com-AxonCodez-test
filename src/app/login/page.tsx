@@ -7,15 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Header } from "@/components/layout/Header";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,23 +29,24 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
+    
+    const success = await login(email, password);
+
+    if (success) {
       toast({
         title: "Login Successful",
         description: `Welcome back!`,
       });
       router.push('/');
-    } catch (error: any) {
-      console.error("Login error:", error);
+    } else {
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error.message || "Invalid credentials. Please try again.",
+        description: "Invalid credentials. Please try again.",
       });
-    } finally {
-      setIsSubmitting(false);
     }
+    
+    setIsSubmitting(false);
   };
 
   if (loading || user) {
@@ -84,8 +83,7 @@ export default function LoginPage() {
                 />
               </div>
               <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="password">Password</Label>
-                <Input 
+                <Label htmlFor="password">Password</Label>                <Input 
                   type="password" 
                   id="password" 
                   placeholder="********" 
