@@ -10,6 +10,7 @@ import placeholderData from '@/lib/placeholder-images.json';
 
 export default function Home() {
   const heroImage = placeholderData.placeholderImages.find(img => img.id === 'hero-image');
+  const currentYear = new Date().getFullYear();
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -84,7 +85,7 @@ export default function Home() {
       </main>
       <footer className="py-6 border-t">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} VIT Q-Less. All Rights Reserved.
+            © {currentYear} VIT Q-Less. All Rights Reserved.
         </div>
       </footer>
     </div>
