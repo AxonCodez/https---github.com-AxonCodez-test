@@ -77,11 +77,11 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button asChild variant="outline" className={isTransparentBg ? 'bg-white/20 border-white/50 text-white hover:bg-white/30' : ''}>
-              <Link href="/login">
-                Login
-              </Link>
-            </Button>
+            <Link href="/login" passHref>
+              <Button asChild variant="outline" className={isTransparentBg ? 'bg-white/20 border-white/50 text-white hover:bg-white/30' : ''}>
+                <span>Login</span>
+              </Button>
+            </Link>
           )}
            <Button variant="ghost" size="icon" className={`h-10 w-10 rounded-full ${textColorClass}`}>
             <Bell />
