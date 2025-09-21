@@ -10,10 +10,20 @@ import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
 
 export default function LoginPage() {
+  const { user, loading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
+
 
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
@@ -56,6 +66,17 @@ export default function LoginPage() {
       });
     }
   };
+
+  if (loading || user) {
+     return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <p>Loading...</p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
