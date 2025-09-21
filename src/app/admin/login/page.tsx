@@ -1,0 +1,93 @@
+
+"use client";
+
+import { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Header } from "@/components/layout/Header";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
+export default function AdminLoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({
+        title: "Admin Login Successful",
+        description: "Redirecting to admin portal...",
+      });
+      router.push('/admin');
+    } catch (error: any) {
+      console.error("Admin login error:", error);
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: error.message || "Invalid credentials. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1 flex items-center justify-center p-4">
+        <Card className="w-full max-w-sm shadow-xl">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-headline">Admin Login</CardTitle>
+            <CardDescription>Enter your administrator credentials</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAdminLogin} className="flex flex-col gap-4">
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="email">Email</Label>
+                <Input 
+                  type="email" 
+                  id="email" 
+                  placeholder="admin@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required 
+                />
+              </div>
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  type="password" 
+                  id="password" 
+                  placeholder="********" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button className="w-full" type="submit" disabled={loading}>
+                {loading ? 'Logging in...' : 'Login'}
+              </Button>
+               <p className="text-center text-xs text-muted-foreground">
+                Not an admin?{' '}
+                <Link href="/login" className="underline hover:text-primary">
+                  Login as a Student
+                </Link>
+              </p>
+            </form>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
+}
