@@ -1,91 +1,128 @@
+"use client";
+
 import Link from 'next/link';
-import Image from 'next/image';
 import { services } from '@/lib/data';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, BarChart3, Bell, BookUser, Home as HomeIcon, Plus, Search, User as UserIcon } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
-import placeholderData from '@/lib/placeholder-images.json';
+import { useAuth } from '@/context/AuthContext';
+import { useState, useEffect } from 'react';
 
 export default function Home() {
-  const heroImage = placeholderData.placeholderImages.find(img => img.id === 'hero-image');
-  const currentYear = new Date().getFullYear();
+  const { user } = useAuth();
+  const [activeTokens, setActiveTokens] = useState<{ serviceId: string; token: number }[]>([]);
+
+  useEffect(() => {
+    const tokens = services
+      .map(service => {
+        if (typeof window !== 'undefined') {
+          const token = localStorage.getItem(`userToken_${service.id}`);
+          return token ? { serviceId: service.id, serviceName: service.name, token: Number(token) } : null;
+        }
+        return null;
+      })
+      .filter(Boolean) as { serviceId: string; serviceName: string; token: number }[];
+    // For this demo, we'll just show the first active token. A real app might show more.
+    setActiveTokens(tokens.slice(0, 1));
+  }, [services]);
+
+  const queueServices = services.filter(s => s.type === 'queue');
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-primary">
       <Header />
-      <main className="flex-1">
-        <section className="w-full pt-12 md:pt-24 lg:pt-32">
-          <div className="container px-4 md:px-6">
-            <div className="grid gap-6 lg:grid-cols-[1fr_500px] lg:gap-12 xl:grid-cols-[1fr_550px]">
-              <div className="flex flex-col justify-center space-y-4">
-                <div className="space-y-4">
-                  <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none text-primary font-headline">
-                    VIT Q-Less: Queue less to stress less
-                  </h1>
-                  <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    Your one-stop solution for managing queues and appointments across campus services at VIT. Reclaim your time and focus on what matters.
-                  </p>
-                </div>
-              </div>
-              {heroImage && (
-                <Image
-                  alt="VIT Campus"
-                  className="mx-auto aspect-square overflow-hidden rounded-xl object-cover"
-                  height="550"
-                  src={heroImage.imageUrl}
-                  width="550"
-                  data-ai-hint={heroImage.imageHint}
-                  priority
-                />
-              )}
-            </div>
-          </div>
-        </section>
+      <main className="flex-1 p-4 md:p-6 space-y-6">
+        <div className="text-background">
+          <p className="text-lg font-light flex items-center gap-2">
+            <span className="text-yellow-400">☀️</span> GOOD MORNING
+          </p>
+          <h1 className="text-3xl font-bold">{user?.displayName || 'Guest'}</h1>
+        </div>
 
-        <section id="services" className="container mx-auto px-4 md:px-6 py-12 md:py-24">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground font-headline">
-              Campus Services
-            </h2>
-            <p className="mt-3 max-w-2xl mx-auto text-lg text-muted-foreground">
-              Select a service to join a queue or book an appointment.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {services.map((service) => (
-              <Card key={service.id} className="flex flex-col hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1">
-                <CardHeader className="flex-row items-start gap-4 space-y-0 pb-4">
-                  <div className="bg-primary/10 p-3 rounded-lg">
-                    <service.icon className="w-6 h-6 text-primary" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+           <Card className="bg-primary/80 backdrop-blur-sm border-white/20 text-white">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-white/80">FEATURED</p>
+                <p className="font-medium mt-1">Meet your staff, proctor or HOD</p>
+                 <Button variant="link" className="p-0 h-auto text-white/90 mt-2">Book an appointment</Button>
+              </div>
+              <BookUser className="w-16 h-16 text-white/30" />
+            </CardContent>
+          </Card>
+          {activeTokens.map(tokenInfo => {
+            const service = services.find(s => s.id === tokenInfo.serviceId);
+            return (
+               <Card key={tokenInfo.serviceId} className="bg-accent/80 backdrop-blur-sm border-pink-300/20 text-accent-foreground">
+                <CardContent className="p-4">
+                  <p className="text-xs font-semibold uppercase opacity-80">Active Tokens</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="flex items-center gap-2">
+                      <service.icon className="w-5 h-5 opacity-70" />
+                      <span className="font-semibold">{service?.name}</span>
+                    </div>
+                    <div className="bg-white/20 text-white rounded-full h-12 w-12 flex items-center justify-center font-bold text-lg">
+                      #{tokenInfo.token}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-lg font-headline">{service.name}</CardTitle>
-                    <Badge variant={service.status === 'Open' ? 'success' : 'destructive'} className="mt-2">
-                      {service.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <CardDescription>{service.description}</CardDescription>
                 </CardContent>
-                <CardFooter>
-                  <Button asChild className="w-full" disabled={service.status === 'Closed'}>
-                    <Link href={service.type === 'queue' ? `/queue/${service.id}` : `/appointment/${service.id}`}>
-                      Proceed <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardFooter>
               </Card>
-            ))}
-          </div>
-        </section>
+            )
+          })}
+        </div>
+
+        <Card className="bg-card text-card-foreground rounded-t-3xl">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">Live Queues</h2>
+              <Link href="#" className="text-sm font-semibold text-primary">See all queues</Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {queueServices.map(service => (
+                <Link href={`/queue/${service.id}`} key={service.id}>
+                  <Card className="bg-secondary hover:bg-muted transition-colors">
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-primary/10 p-2 rounded-lg">
+                          <BarChart3 className="w-6 h-6 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">{service.name}</p>
+                          <p className="text-xs text-muted-foreground">In queue - 68 people</p>
+                        </div>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-muted-foreground" />
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </main>
-      <footer className="py-6 border-t">
-        <div className="container mx-auto text-center text-sm text-muted-foreground">
-            © {currentYear} VIT Q-Less. All Rights Reserved.
+
+       <footer className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-2 m-4 rounded-full shadow-lg border w-[calc(100%-2rem)] mx-auto">
+        <div className="flex justify-around items-center">
+          <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-primary">
+            <HomeIcon className="w-6 h-6" />
+            <span className="text-xs">Home</span>
+          </Button>
+          <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-muted-foreground">
+            <Search className="w-6 h-6" />
+            <span className="text-xs">Search</span>
+          </Button>
+          <Button size="icon" className="h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-lg -translate-y-6">
+            <Plus className="w-8 h-8" />
+          </Button>
+          <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-muted-foreground">
+            <BarChart3 className="w-6 h-6" />
+            <span className="text-xs">Queues</span>
+          </Button>
+           <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-muted-foreground">
+            <UserIcon className="w-6 h-6" />
+            <span className="text-xs">Profile</span>
+          </Button>
         </div>
       </footer>
     </div>
