@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePathname, useRouter } from 'next/navigation';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -77,10 +79,8 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link href="/login" passHref>
-              <Button asChild variant="outline" className={isTransparentBg ? 'bg-white/20 border-white/50 text-white hover:bg-white/30' : ''}>
-                <span>Login</span>
-              </Button>
+            <Link href="/login" className={cn(buttonVariants({ variant: "outline" }), isTransparentBg ? 'bg-white/20 border-white/50 text-white hover:bg-white/30' : '')}>
+                Login
             </Link>
           )}
            <Button variant="ghost" size="icon" className={`h-10 w-10 rounded-full ${textColorClass}`}>
