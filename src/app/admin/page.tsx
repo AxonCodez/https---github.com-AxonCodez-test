@@ -1,18 +1,41 @@
 
 "use client";
 
-import { services } from '@/lib/data';
+import { getServices, Service } from '@/lib/data';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, PlusCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
+// A custom hook to manage services with live updates from localStorage
+const useServices = () => {
+  const [services, setServices] = useState<Service[]>([]);
+
+  useEffect(() => {
+    const updateServices = () => setServices(getServices());
+    updateServices(); // Initial fetch
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'demo_services') {
+        updateServices();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  return services;
+};
+
 
 export default function AdminPage() {
   const { user, isAdmin, loading } = useAuth();
   const router = useRouter();
+  const services = useServices();
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) {
@@ -41,8 +64,9 @@ export default function AdminPage() {
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2 font-headline">Admin Portal</h1>
         <p className="text-muted-foreground mb-8">Manage campus services efficiently.</p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="flex flex-col">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          
+          <Card className="flex flex-col lg:col-span-1">
             <CardHeader>
               <CardTitle>Manage Queues</CardTitle>
               <CardDescription>Advance the serving token for queued services.</CardDescription>
@@ -58,7 +82,8 @@ export default function AdminPage() {
               ))}
             </CardContent>
           </Card>
-          <Card className="flex flex-col">
+
+          <Card className="flex flex-col lg:col-span-1">
             <CardHeader>
               <CardTitle>View Appointments</CardTitle>
               <CardDescription>See the schedule of appointments for the day.</CardDescription>
@@ -74,6 +99,19 @@ export default function AdminPage() {
               ))}
             </CardContent>
           </Card>
+          
+          <Card className="flex flex-col lg:col-span-1 border-dashed hover:border-solid hover:border-primary transition-all">
+             <Link href="/admin/create-service" className="h-full">
+              <CardContent className="h-full flex flex-col items-center justify-center text-center p-6">
+                <PlusCircle className="h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-semibold text-foreground">Create New Service</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Add a new queue or appointment-based service.
+                </p>
+              </CardContent>
+            </Link>
+          </Card>
+
         </div>
       </main>
     </div>

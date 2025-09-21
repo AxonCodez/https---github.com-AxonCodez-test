@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { services, Service } from '@/lib/data';
+import { getServices, serviceIcons, Service } from '@/lib/data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, BarChart3, Bell, BookUser, Home as HomeIcon, Plus, Search, User as UserIcon } from 'lucide-react';
@@ -16,15 +16,37 @@ type QueueStatus = {
   [serviceId: string]: number;
 };
 
+// A custom hook to manage services with live updates from localStorage
+const useServices = () => {
+  const [services, setServices] = useState<Service[]>([]);
+
+  useEffect(() => {
+    const updateServices = () => setServices(getServices());
+    updateServices(); // Initial fetch
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'demo_services') {
+        updateServices();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  return services;
+};
+
 export default function Home() {
   const { user } = useAuth();
+  const allServices = useServices();
   const [activeTokens, setActiveTokens] = useState<{ serviceId: string; token: number }[]>([]);
   const [queueStatus, setQueueStatus] = useState<QueueStatus>({});
   const [queueServices, setQueueServices] = useState<Service[]>([]);
 
   useEffect(() => {
     // Filter queue services based on user gender
-    const allQueueServices = services.filter(s => s.type === 'queue');
+    const allQueueServices = allServices.filter(s => s.type === 'queue');
     if (user?.gender === 'male') {
       setQueueServices(allQueueServices.filter(s => s.gender !== 'female'));
     } else if (user?.gender === 'female') {
@@ -38,7 +60,7 @@ export default function Home() {
       const newQueueStatus: QueueStatus = {};
       const activeUserTokens: { serviceId: string; token: number }[] = [];
 
-      services.forEach(service => {
+      allServices.forEach(service => {
         if (typeof window !== 'undefined' && service.type === 'queue') {
           const queueDataStr = localStorage.getItem(`queue_${service.id}`);
           const queue: Queue = queueDataStr ? JSON.parse(queueDataStr) : { currentToken: 0, totalTokens: 0, users: [] };
@@ -62,7 +84,7 @@ export default function Home() {
 
     // Listen for storage changes to update UI in real-time
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key?.startsWith('queue_')) {
+      if (event.key?.startsWith('queue_') || event.key === 'demo_services') {
         getQueueStatus();
       }
     };
@@ -71,7 +93,7 @@ export default function Home() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [user]);
+  }, [user, allServices]);
 
   return (
     <div className="flex flex-col min-h-screen bg-primary">
@@ -112,15 +134,16 @@ export default function Home() {
             </CardContent>
           </Card>
           {activeTokens.map(tokenInfo => {
-            const service = services.find(s => s.id === tokenInfo.serviceId);
+            const service = allServices.find(s => s.id === tokenInfo.serviceId);
             if (!service) return null;
+            const Icon = serviceIcons[service.iconName];
             return (
                <Card key={tokenInfo.serviceId} className="bg-accent/80 backdrop-blur-sm border-pink-300/20 text-accent-foreground">
                 <CardContent className="p-4">
                   <p className="text-xs font-semibold uppercase opacity-80">Active Tokens</p>
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex items-center gap-2">
-                      <service.icon className="w-5 h-5 opacity-70" />
+                      <Icon className="w-5 h-5 opacity-70" />
                       <span className="font-semibold">{service.name}</span>
                     </div>
                     <div className="bg-white/20 text-white rounded-full h-12 w-12 flex items-center justify-center font-bold text-lg">

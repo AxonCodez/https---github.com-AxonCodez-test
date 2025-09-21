@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { services } from '@/lib/data';
+import { getServices, serviceIcons, Service } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import Link from 'next/link';
@@ -14,7 +14,7 @@ import type { Queue, QueueUser } from '@/context/QueueContext';
 type UserToken = {
   serviceId: string;
   serviceName: string;
-  icon: React.ElementType;
+  iconName: keyof typeof serviceIcons;
   token: number;
   currentToken: number;
   totalInQueue: number;
@@ -22,8 +22,14 @@ type UserToken = {
 
 export default function QueuesPage() {
   const { user } = useAuth();
+  const [services, setServices] = useState<Service[]>([]);
   const [activeTokens, setActiveTokens] = useState<UserToken[]>([]);
   const [isClient, setIsClient] = useState(false);
+  
+  useEffect(() => {
+    setServices(getServices());
+  }, []);
+
 
   useEffect(() => {
     setIsClient(true);
@@ -41,7 +47,7 @@ export default function QueuesPage() {
               userTokens.push({
                 serviceId: service.id,
                 serviceName: service.name,
-                icon: service.icon,
+                iconName: service.iconName,
                 token: userInQueue.token,
                 currentToken: queue.currentToken,
                 totalInQueue: queue.users.filter(u => u.token > queue.currentToken).length,
@@ -56,7 +62,8 @@ export default function QueuesPage() {
     getActiveTokens();
 
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key?.startsWith('queue_')) {
+      if (event.key?.startsWith('queue_') || event.key === 'demo_services') {
+        setServices(getServices()); // Reread services in case they changed
         getActiveTokens();
       }
     };
@@ -64,7 +71,7 @@ export default function QueuesPage() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [user]);
+  }, [user, services]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -75,12 +82,14 @@ export default function QueuesPage() {
 
         {isClient && activeTokens.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {activeTokens.map(tokenInfo => (
+            {activeTokens.map(tokenInfo => {
+               const Icon = serviceIcons[tokenInfo.iconName];
+              return (
               <Card key={tokenInfo.serviceId} className="flex flex-col">
                 <CardHeader>
                   <div className="flex items-center gap-3 mb-2">
                      <div className="bg-primary/10 p-2 rounded-lg">
-                        <tokenInfo.icon className="w-6 h-6 text-primary" />
+                        <Icon className="w-6 h-6 text-primary" />
                      </div>
                      <CardTitle className="m-0">{tokenInfo.serviceName}</CardTitle>
                   </div>
@@ -104,7 +113,7 @@ export default function QueuesPage() {
                   </Link>
                 </CardContent>
               </Card>
-            ))}
+            )})}
           </div>
         ) : (
           <div className="text-center py-20 px-4 border-2 border-dashed rounded-lg">

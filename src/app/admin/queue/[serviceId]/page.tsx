@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import { services } from '@/lib/data';
+import { getServices, Service } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Ticket, UserX, Users } from 'lucide-react';
@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function AdminQueuePage() {
   const params = useParams();
   const serviceId = params.serviceId as string;
-  const service = services.find(s => s.id === serviceId);
+  const [service, setService] = useState<Service | undefined | null>(null);
   const { toast } = useToast();
 
   const [queue, setQueue] = useState<Queue | null>(null);
@@ -28,13 +28,14 @@ export default function AdminQueuePage() {
 
   useEffect(() => {
     const updateState = () => {
+      setService(getServices().find(s => s.id === serviceId));
       setQueue(getQueueData());
     };
     updateState();
     
     // Listen for storage changes from other tabs (the user page)
     const handleStorageChange = (event: StorageEvent) => {
-       if (event.key === `queue_${serviceId}`) {
+       if (event.key === `queue_${serviceId}` || event.key === 'demo_services') {
         updateState();
       }
     };
@@ -66,6 +67,16 @@ export default function AdminQueuePage() {
   };
 
   if (!service) {
+    if (service === null) {
+      return (
+        <div className="flex flex-col min-h-screen">
+          <Header />
+          <main className="flex-1 container mx-auto p-4 md:p-8 flex items-center justify-center">
+            <p>Loading...</p>
+          </main>
+        </div>
+      );
+    }
     notFound();
   }
 

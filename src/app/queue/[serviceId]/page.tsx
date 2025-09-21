@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { notFound, useParams } from 'next/navigation';
-import { services } from '@/lib/data';
+import { getServices, Service } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Ticket, Users, Timer, LogOut } from 'lucide-react';
@@ -17,7 +17,7 @@ export default function QueuePage() {
   const serviceId = params.serviceId as string;
   const { user, loading: authLoading } = useAuth();
   
-  const [service, setService] = useState(services.find(s => s.id === serviceId));
+  const [service, setService] = useState<Service | undefined | null>(null);
   const [queue, setQueue] = useState<Queue | null>(null);
   const [userInQueue, setUserInQueue] = useState<QueueUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,7 +33,7 @@ export default function QueuePage() {
   useEffect(() => {
     if (!serviceId || authLoading) return;
 
-    setService(services.find(s => s.id === serviceId));
+    setService(getServices().find(s => s.id === serviceId));
 
     const updateState = () => {
       const currentQueue = getQueueData();
@@ -53,7 +53,8 @@ export default function QueuePage() {
     updateState();
 
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === `queue_${serviceId}`) {
+      if (event.key === `queue_${serviceId}` || event.key === 'demo_services') {
+        setService(getServices().find(s => s.id === serviceId));
         updateState();
       }
     };
@@ -120,7 +121,7 @@ export default function QueuePage() {
 
   const peopleAhead = userInQueue && queue ? userInQueue.token - queue.currentToken - 1 : 0;
   const estimatedWaitTime = peopleAhead > 0 ? peopleAhead * 2 : 0; // Assuming 2 mins per person
-  const totalInQueue = queue ? queue.users.filter(u => u.token > queue.currentToken).length : 0;
+  const totalInQueue = queue ? queue.users.filter(u => u.token > (queue?.currentToken || 0)).length : 0;
 
   return (
     <div className="flex flex-col min-h-screen">
