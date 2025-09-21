@@ -7,15 +7,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Header } from "@/components/layout/Header";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const { user, loading } = useAuth();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,22 +29,29 @@ export default function LoginPage() {
     }
   }, [user, loading, router]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, {
+            displayName: name,
+        });
+      }
+
       toast({
-        title: "Login Successful",
-        description: `Welcome back!`,
+        title: "Registration Successful",
+        description: "Your account has been created.",
       });
       router.push('/');
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("Registration error:", error);
       toast({
         variant: "destructive",
-        title: "Login Failed",
-        description: error.message || "Invalid credentials. Please try again.",
+        title: "Registration Failed",
+        description: error.message || "Could not create account. Please try again.",
       });
     } finally {
       setIsSubmitting(false);
@@ -67,11 +75,22 @@ export default function LoginPage() {
       <main className="flex-1 flex items-center justify-center p-4">
         <Card className="w-full max-w-sm shadow-xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-headline">Student Login</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
+            <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
+            <CardDescription>Sign up to get started</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <form onSubmit={handleRegister} className="flex flex-col gap-4">
+               <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="name">Full Name</Label>
+                <Input 
+                  type="text" 
+                  id="name" 
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required 
+                />
+              </div>
               <div className="grid w-full items-center gap-1.5">
                 <Label htmlFor="email">Email</Label>
                 <Input 
@@ -95,18 +114,12 @@ export default function LoginPage() {
                 />
               </div>
               <Button className="w-full" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Logging in...' : 'Login'}
+                {isSubmitting ? 'Registering...' : 'Register'}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                Don't have an account?{' '}
-                <Link href="/register" className="underline hover:text-primary">
-                  Register
-                </Link>
-              </p>
-               <p className="text-center text-xs text-muted-foreground pt-4 border-t">
-                Are you an admin?{' '}
-                <Link href="/admin/login" className="underline hover:text-primary">
-                  Login as an Admin
+                Already have an account?{' '}
+                <Link href="/login" className="underline hover:text-primary">
+                  Login
                 </Link>
               </p>
             </form>
