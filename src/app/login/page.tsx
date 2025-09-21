@@ -21,6 +21,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Redirect if user is already logged in and auth check is complete
     if (!loading && user) {
       router.push('/');
     }
@@ -48,16 +49,11 @@ export default function LoginPage() {
     
     setIsSubmitting(false);
   };
-
-  if (loading || user) {
-     return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <p>Loading...</p>
-        </main>
-      </div>
-    );
+  
+  // Don't render a loading state, let the useEffect handle redirection.
+  // This prevents a render loop if the user is already logged in.
+  if (user && !loading) {
+    return null;
   }
 
   return (
@@ -92,7 +88,7 @@ export default function LoginPage() {
                   required
                 />
               </div>
-              <Button className="w-full" type="submit" disabled={isSubmitting}>
+              <Button className="w-full" type="submit" disabled={isSubmitting || loading}>
                 {isSubmitting ? 'Logging in...' : 'Login'}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
