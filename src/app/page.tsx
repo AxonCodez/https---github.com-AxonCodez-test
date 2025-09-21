@@ -9,23 +9,50 @@ import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
 
+type QueueStatus = {
+  [serviceId: string]: number;
+};
+
 export default function Home() {
   const { user } = useAuth();
   const [activeTokens, setActiveTokens] = useState<{ serviceId: string; token: number }[]>([]);
+  const [queueStatus, setQueueStatus] = useState<QueueStatus>({});
 
   useEffect(() => {
-    const tokens = services
-      .map(service => {
+    const getQueueStatus = () => {
+      const newQueueStatus: QueueStatus = {};
+      const activeUserTokens: { serviceId: string; token: number }[] = [];
+
+      services.forEach(service => {
         if (typeof window !== 'undefined') {
-          const token = localStorage.getItem(`userToken_${service.id}`);
-          return token ? { serviceId: service.id, serviceName: service.name, token: Number(token) } : null;
+          // Get active tokens for the current user
+          const userToken = localStorage.getItem(`userToken_${service.id}`);
+          if (userToken) {
+            activeUserTokens.push({ serviceId: service.id, token: Number(userToken) });
+          }
+
+          // Get queue length for all queue services
+          if (service.type === 'queue') {
+            const current = Number(localStorage.getItem(`currentToken_${service.id}`) || '0');
+            const total = Number(localStorage.getItem(`totalTokens_${service.id}`) || '0');
+            newQueueStatus[service.id] = Math.max(0, total - current);
+          }
         }
-        return null;
-      })
-      .filter(Boolean) as { serviceId: string; serviceName: string; token: number }[];
-    // For this demo, we'll just show the first active token. A real app might show more.
-    setActiveTokens(tokens.slice(0, 1));
-  }, [services]);
+      });
+
+      setQueueStatus(newQueueStatus);
+      // For this demo, we'll just show the first active token. A real app might show more.
+      setActiveTokens(activeUserTokens.slice(0, 1));
+    };
+
+    getQueueStatus();
+
+    // Listen for storage changes to update UI in real-time
+    window.addEventListener('storage', getQueueStatus);
+    return () => {
+      window.removeEventListener('storage', getQueueStatus);
+    };
+  }, []);
 
   const queueServices = services.filter(s => s.type === 'queue');
 
@@ -53,6 +80,7 @@ export default function Home() {
           </Card>
           {activeTokens.map(tokenInfo => {
             const service = services.find(s => s.id === tokenInfo.serviceId);
+            if (!service) return null;
             return (
                <Card key={tokenInfo.serviceId} className="bg-accent/80 backdrop-blur-sm border-pink-300/20 text-accent-foreground">
                 <CardContent className="p-4">
@@ -60,7 +88,7 @@ export default function Home() {
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex items-center gap-2">
                       <service.icon className="w-5 h-5 opacity-70" />
-                      <span className="font-semibold">{service?.name}</span>
+                      <span className="font-semibold">{service.name}</span>
                     </div>
                     <div className="bg-white/20 text-white rounded-full h-12 w-12 flex items-center justify-center font-bold text-lg">
                       #{tokenInfo.token}
@@ -89,7 +117,9 @@ export default function Home() {
                         </div>
                         <div>
                           <p className="font-semibold">{service.name}</p>
-                          <p className="text-xs text-muted-foreground">In queue - 68 people</p>
+                          <p className="text-xs text-muted-foreground">
+                            In queue - {queueStatus[service.id] ?? 0} {queueStatus[service.id] === 1 ? 'person' : 'people'}
+                          </p>
                         </div>
                       </div>
                       <ArrowRight className="w-5 h-5 text-muted-foreground" />
