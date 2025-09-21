@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useParams, notFound } from 'next/navigation';
+import { useParams, notFound, useRouter } from 'next/navigation';
 import { staff, timeSlots as allTimeSlots, appointments as mockAppointments } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,13 +19,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useAuth } from '@/context/AuthContext';
 
-type Appointment = { time: string; student: string };
+type Appointment = { time: string; studentId: string };
 
 export default function AppointmentPage() {
   const params = useParams();
   const staffId = params.staffId as string;
   const staffMember = staff.find(s => s.id === staffId);
+  const { user } = useAuth();
+  const router = useRouter();
   
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
@@ -42,14 +46,18 @@ export default function AppointmentPage() {
   }, [staffId]);
   
   const handleSelectSlot = (time: string) => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
     setSelectedSlot(time);
     setShowConfirmDialog(true);
   };
 
   const handleConfirmBooking = () => {
-    if (!selectedSlot) return;
+    if (!selectedSlot || !user) return;
 
-    const newBooking: Appointment = { time: selectedSlot, student: 'CurrentUser' };
+    const newBooking: Appointment = { time: selectedSlot, studentId: user.uid };
     const storedBookings: Appointment[] = JSON.parse(localStorage.getItem(`appointments_${staffId}`) || '[]');
     localStorage.setItem(`appointments_${staffId}`, JSON.stringify([...storedBookings, newBooking]));
     

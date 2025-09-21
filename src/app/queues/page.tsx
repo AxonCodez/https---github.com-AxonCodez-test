@@ -8,6 +8,7 @@ import { Header } from '@/components/layout/Header';
 import Link from 'next/link';
 import { Ticket, ArrowRight, UserCheck, Home as HomeIcon, Search, Plus, BarChart3, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/context/AuthContext';
 
 type UserToken = {
   serviceId: string;
@@ -19,16 +20,19 @@ type UserToken = {
 };
 
 export default function QueuesPage() {
+  const { user } = useAuth();
   const [activeTokens, setActiveTokens] = useState<UserToken[]>([]);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
+    if (!user) return;
+
     const getActiveTokens = () => {
       const userTokens: UserToken[] = [];
       services.forEach(service => {
         if (service.type === 'queue') {
-          const userTokenStr = localStorage.getItem(`userToken_${service.id}`);
+          const userTokenStr = localStorage.getItem(`userToken_${service.id}_${user.uid}`);
           if (userTokenStr) {
             const currentToken = Number(localStorage.getItem(`currentToken_${service.id}`) || '0');
             const totalTokens = Number(localStorage.getItem(`totalTokens_${service.id}`) || '0');
@@ -53,7 +57,7 @@ export default function QueuesPage() {
     return () => {
       window.removeEventListener('storage', getActiveTokens);
     };
-  }, []);
+  }, [user]);
 
   return (
     <div className="flex flex-col min-h-screen">

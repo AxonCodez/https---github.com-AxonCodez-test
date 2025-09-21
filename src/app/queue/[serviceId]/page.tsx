@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -8,10 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Ticket, Users, Timer, LogOut } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/AuthContext';
 
 export default function QueuePage() {
   const params = useParams();
   const serviceId = params.serviceId as string;
+  const { user, loading: authLoading } = useAuth();
   
   const [service, setService] = useState(services.find(s => s.id === serviceId));
   const [currentToken, setCurrentToken] = useState<number | null>(null);
@@ -20,13 +23,18 @@ export default function QueuePage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!serviceId) return;
+    if (!serviceId || authLoading) return;
 
     setService(services.find(s => s.id === serviceId));
 
-    const storedUserToken = localStorage.getItem(`userToken_${serviceId}`);
-    if (storedUserToken) {
-      setUserToken(Number(storedUserToken));
+    if (user) {
+      const storedUserToken = localStorage.getItem(`userToken_${serviceId}_${user.uid}`);
+      if (storedUserToken) {
+        setUserToken(Number(storedUserToken));
+      }
+    } else {
+      // If user logs out, clear their token
+      setUserToken(null);
     }
 
     const getStatus = () => {
@@ -46,22 +54,20 @@ export default function QueuePage() {
       clearInterval(interval);
       window.removeEventListener('storage', getStatus);
     };
-  }, [serviceId]);
+  }, [serviceId, user, authLoading]);
 
   const handleGetToken = () => {
-    if (totalTokens === null) return;
+    if (totalTokens === null || !user) return;
     const newUserToken = totalTokens + 1;
     setUserToken(newUserToken);
     setTotalTokens(newUserToken);
-    localStorage.setItem(`userToken_${serviceId}`, String(newUserToken));
+    localStorage.setItem(`userToken_${serviceId}_${user.uid}`, String(newUserToken));
     localStorage.setItem(`totalTokens_${serviceId}`, String(newUserToken));
   };
   
   const handleLeaveQueue = () => {
-    if (userToken === null) return;
+    if (userToken === null || !user) return;
 
-    // If the user who is leaving was the last one to get a token, we can decrement the total.
-    // In a more complex scenario, this might need a different approach.
     if (totalTokens !== null && userToken === totalTokens) {
       const newTotal = totalTokens - 1;
       setTotalTokens(newTotal);
@@ -69,7 +75,7 @@ export default function QueuePage() {
     }
 
     setUserToken(null);
-    localStorage.removeItem(`userToken_${serviceId}`);
+    localStorage.removeItem(`userToken_${serviceId}_${user.uid}`);
   };
 
   if (!isLoading && !service) {
@@ -138,8 +144,8 @@ export default function QueuePage() {
                 </Button>
               </div>
             ) : (
-              <Button onClick={handleGetToken} size="lg" className="w-full" disabled={isLoading || service?.status === 'Closed'}>
-                <Ticket className="mr-2 h-5 w-5" /> Get a Token
+              <Button onClick={handleGetToken} size="lg" className="w-full" disabled={isLoading || authLoading || !user || service?.status === 'Closed'}>
+                <Ticket className="mr-2 h-5 w-5" /> {user ? 'Get a Token' : 'Login to Get Token'}
               </Button>
             )}
           </CardContent>

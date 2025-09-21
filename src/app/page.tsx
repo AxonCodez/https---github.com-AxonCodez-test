@@ -27,9 +27,11 @@ export default function Home() {
       services.forEach(service => {
         if (typeof window !== 'undefined') {
           // Get active tokens for the current user
-          const userToken = localStorage.getItem(`userToken_${service.id}`);
-          if (userToken) {
-            activeUserTokens.push({ serviceId: service.id, token: Number(userToken) });
+          if (user && service.type === 'queue') {
+            const userToken = localStorage.getItem(`userToken_${service.id}_${user.uid}`);
+            if (userToken) {
+              activeUserTokens.push({ serviceId: service.id, token: Number(userToken) });
+            }
           }
 
           // Get queue length for all queue services
@@ -53,7 +55,7 @@ export default function Home() {
     return () => {
       window.removeEventListener('storage', getQueueStatus);
     };
-  }, []);
+  }, [user]);
 
   const queueServices = services.filter(s => s.type === 'queue');
 
