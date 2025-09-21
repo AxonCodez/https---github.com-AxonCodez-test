@@ -9,6 +9,7 @@ import { ArrowRight, BarChart3, Bell, BookUser, Home as HomeIcon, Plus, Search, 
 import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type QueueStatus = {
   [serviceId: string]: number;
@@ -69,6 +70,22 @@ export default function Home() {
           </p>
           <h1 className="text-3xl font-bold">{user?.displayName || 'Guest'}</h1>
         </div>
+
+        {user && !user.gender && (
+          <Alert className="bg-accent/90 border-accent-foreground/20 text-accent-foreground">
+            <AlertTitle className="font-bold">Complete Your Profile</AlertTitle>
+            <AlertDescription>
+              <div className="flex justify-between items-center">
+                <p>Please set your gender to personalize your experience.</p>
+                <Link href="/profile">
+                  <Button variant="link" className="p-0 h-auto text-accent-foreground font-bold">
+                    Go to Profile
+                  </Button>
+                </Link>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
            <Card className="bg-primary/80 backdrop-blur-sm border-white/20 text-white">

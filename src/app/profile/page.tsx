@@ -3,23 +3,50 @@
 
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, ChevronRight, Home as HomeIcon, LogOut, Plus, Search, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ProfilePage() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, updateUser } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
+  
+  const [gender, setGender] = useState(user?.gender || '');
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
     }
+    if (user) {
+      setGender(user.gender || '');
+    }
   }, [user, loading, router]);
+  
+  const handleGenderChange = async (newGender: string) => {
+    if (!user) return;
+    setGender(newGender);
+    const success = await updateUser({ gender: newGender });
+    if (success) {
+      toast({
+        title: "Profile Updated",
+        description: "Your gender has been successfully updated.",
+      });
+    } else {
+       toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: "Could not update your profile. Please try again.",
+      });
+    }
+  };
 
   const getInitials = (email: string | null | undefined) => {
     if (!email) return '';
@@ -62,17 +89,31 @@ export default function ProfilePage() {
             <CardTitle>Account Settings</CardTitle>
             <CardDescription>Manage your profile and settings.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="gender">Gender</Label>
+              <Select value={gender} onValueChange={handleGenderChange}>
+                <SelectTrigger id="gender">
+                  <SelectValue placeholder="Select your gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex flex-col gap-2">
-               <Button variant="outline" className="justify-between">
+               <Button variant="outline" className="justify-between" disabled>
                 <span>Edit Profile</span>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </Button>
-               <Button variant="outline" className="justify-between">
+               <Button variant="outline" className="justify-between" disabled>
                 <span>Notifications</span>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </Button>
-               <Button variant="outline" className="justify-between">
+               <Button variant="outline" className="justify-between" disabled>
                 <span>Privacy</span>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </Button>
