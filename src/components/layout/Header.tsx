@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Logo } from './Logo';
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -83,13 +84,14 @@ export function Header() {
   return (
     <header className={isTransparentBg ? 'bg-transparent' : 'bg-background'}>
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        <div>
-          {pathname !== '/' && (
+        <div className="flex items-center gap-2">
+          {pathname !== '/' ? (
             <Button onClick={() => router.back()} variant="ghost" size="icon" className={`h-10 w-10 rounded-full ${textColorClass}`}>
               <ChevronLeft />
               <span className="sr-only">Back</span>
             </Button>
-          )}
+          ) : <Logo className={cn("h-8 w-auto", textColorClass)} />}
+          {pathname !== '/' && <Logo className={cn("h-8 w-auto", textColorClass)} />}
         </div>
         <nav className="flex items-center gap-2">
           {user ? (
