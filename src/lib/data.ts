@@ -8,11 +8,12 @@ export type Service = {
   status: 'Open' | 'Closed';
   icon: LucideIcon;
   description: string;
+  gender?: 'male' | 'female';
 };
 
 export const services: Service[] = [
-  { id: 'mens-mess-1', name: 'Men\'s Mess 1', type: 'queue', status: 'Open', icon: Utensils, description: 'Join the queue for the main men\'s mess.' },
-  { id: 'womens-mess-1', name: 'Women\'s Mess 1', type: 'queue', status: 'Open', icon: Utensils, description: 'Queue up for the main women\'s mess.' },
+  { id: 'mens-mess-1', name: 'Men\'s Mess 1', type: 'queue', status: 'Open', icon: Utensils, description: 'Join the queue for the main men\'s mess.', gender: 'male' },
+  { id: 'womens-mess-1', name: 'Women\'s Mess 1', type: 'queue', status: 'Open', icon: Utensils, description: 'Queue up for the main women\'s mess.', gender: 'female' },
   { id: 'main-gym', name: 'Main Gym', type: 'queue', status: 'Closed', icon: Dumbbell, description: 'Check gym occupancy and join the waitlist.' },
   { id: 'hod-cse', name: 'HOD - CSE Dept.', type: 'appointment', status: 'Open', icon: BookUser, description: 'Book an appointment with the Head of Department.' },
   { id: 'proctor-jane', name: 'Proctor - Jane Doe', type: 'appointment', status: 'Open', icon: Users, description: 'Schedule a meeting with your proctor.' },

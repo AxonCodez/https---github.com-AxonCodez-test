@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { services } from '@/lib/data';
+import { services, Service } from '@/lib/data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, BarChart3, Bell, BookUser, Home as HomeIcon, Plus, Search, User as UserIcon } from 'lucide-react';
@@ -19,8 +19,20 @@ export default function Home() {
   const { user } = useAuth();
   const [activeTokens, setActiveTokens] = useState<{ serviceId: string; token: number }[]>([]);
   const [queueStatus, setQueueStatus] = useState<QueueStatus>({});
+  const [queueServices, setQueueServices] = useState<Service[]>([]);
 
   useEffect(() => {
+    // Filter queue services based on user gender
+    const allQueueServices = services.filter(s => s.type === 'queue');
+    if (user?.gender === 'male') {
+      setQueueServices(allQueueServices.filter(s => s.gender !== 'female'));
+    } else if (user?.gender === 'female') {
+      setQueueServices(allQueueServices.filter(s => s.gender !== 'male'));
+    } else {
+      // For 'other', 'prefer-not-to-say', or unset gender, show all non-gender-specific and both messes
+      setQueueServices(allQueueServices);
+    }
+    
     const getQueueStatus = () => {
       const newQueueStatus: QueueStatus = {};
       const activeUserTokens: { serviceId: string; token: number }[] = [];
@@ -52,13 +64,15 @@ export default function Home() {
     getQueueStatus();
 
     // Listen for storage changes to update UI in real-time
-    window.addEventListener('storage', getQueueStatus);
+    const handleStorageChange = () => {
+      getQueueStatus();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
     return () => {
-      window.removeEventListener('storage', getQueueStatus);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [user]);
-
-  const queueServices = services.filter(s => s.type === 'queue');
 
   return (
     <div className="flex flex-col min-h-screen bg-primary">
