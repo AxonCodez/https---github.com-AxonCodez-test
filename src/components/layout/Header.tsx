@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, LogOut, Settings } from 'lucide-react';
+import { Bell, ChevronLeft, LogOut, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -13,9 +13,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { usePathname, useRouter } from 'next/navigation';
 
 export function Header() {
   const { user, logout } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const getInitials = (email: string | null | undefined) => {
     if (!email) return '';
@@ -30,7 +33,14 @@ export function Header() {
   return (
     <header className="bg-transparent">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        <div></div>
+        <div>
+          {pathname !== '/' && (
+            <Button onClick={() => router.back()} variant="ghost" size="icon" className="h-10 w-10 rounded-full text-background">
+              <ChevronLeft />
+              <span className="sr-only">Back</span>
+            </Button>
+          )}
+        </div>
         <nav className="flex items-center gap-2">
           {user ? (
              <DropdownMenu>
