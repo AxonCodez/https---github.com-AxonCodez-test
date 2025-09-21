@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -134,25 +135,33 @@ export default function Home() {
 
        <footer className="sticky bottom-0 bg-background/95 backdrop-blur-sm p-2 m-4 rounded-full shadow-lg border w-[calc(100%-2rem)] mx-auto">
         <div className="flex justify-around items-center">
-          <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-primary">
-            <HomeIcon className="w-6 h-6" />
-            <span className="text-xs">Home</span>
-          </Button>
-          <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-muted-foreground">
-            <Search className="w-6 h-6" />
-            <span className="text-xs">Search</span>
-          </Button>
+          <Link href="/">
+            <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-primary">
+              <HomeIcon className="w-6 h-6" />
+              <span className="text-xs">Home</span>
+            </Button>
+          </Link>
+          <Link href="/search">
+            <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-muted-foreground">
+              <Search className="w-6 h-6" />
+              <span className="text-xs">Search</span>
+            </Button>
+          </Link>
           <Button size="icon" className="h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-lg -translate-y-6">
             <Plus className="w-8 h-8" />
           </Button>
-          <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-muted-foreground">
-            <BarChart3 className="w-6 h-6" />
-            <span className="text-xs">Queues</span>
-          </Button>
+          <Link href="/queues">
+            <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-muted-foreground">
+              <BarChart3 className="w-6 h-6" />
+              <span className="text-xs">Queues</span>
+            </Button>
+          </Link>
+          <Link href="/profile">
            <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-muted-foreground">
             <UserIcon className="w-6 h-6" />
             <span className="text-xs">Profile</span>
           </Button>
+          </Link>
         </div>
       </footer>
     </div>
