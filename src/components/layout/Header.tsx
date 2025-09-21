@@ -77,7 +77,7 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className={isTransparentBg ? 'bg-white/20 border-white/50 text-white hover:bg-white/30' : ''}>
               <Link href="/login">
                 Login
               </Link>
