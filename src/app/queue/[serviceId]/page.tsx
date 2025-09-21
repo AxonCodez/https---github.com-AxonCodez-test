@@ -5,7 +5,7 @@ import { notFound, useParams } from 'next/navigation';
 import { services } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Ticket, Users, Timer } from 'lucide-react';
+import { Ticket, Users, Timer, LogOut } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -57,6 +57,21 @@ export default function QueuePage() {
     localStorage.setItem(`totalTokens_${serviceId}`, String(newUserToken));
   };
   
+  const handleLeaveQueue = () => {
+    if (userToken === null) return;
+
+    // If the user who is leaving was the last one to get a token, we can decrement the total.
+    // In a more complex scenario, this might need a different approach.
+    if (totalTokens !== null && userToken === totalTokens) {
+      const newTotal = totalTokens - 1;
+      setTotalTokens(newTotal);
+      localStorage.setItem(`totalTokens_${serviceId}`, String(newTotal));
+    }
+
+    setUserToken(null);
+    localStorage.removeItem(`userToken_${serviceId}`);
+  };
+
   if (!isLoading && !service) {
     notFound();
   }
@@ -95,11 +110,13 @@ export default function QueuePage() {
             </div>
 
             {userToken ? (
-              <div className="text-center p-6 border rounded-lg w-full bg-primary/5">
-                <p className="text-lg font-medium text-primary">Your Token</p>
-                <p className="text-6xl font-extrabold text-primary my-2">#{userToken}</p>
+              <div className="text-center p-6 border rounded-lg w-full bg-primary/5 flex flex-col items-center gap-4">
+                <div>
+                  <p className="text-lg font-medium text-primary">Your Token</p>
+                  <p className="text-6xl font-extrabold text-primary my-2">#{userToken}</p>
+                </div>
                 {currentToken !== null && userToken > currentToken ? (
-                  <div className="mt-4 space-y-2">
+                  <div className="space-y-2">
                     <div className="flex items-center justify-center gap-2 text-muted-foreground">
                       <Users className="h-4 w-4" />
                       <span>{peopleAhead} {peopleAhead === 1 ? 'person' : 'people'} ahead of you</span>
@@ -110,8 +127,12 @@ export default function QueuePage() {
                     </div>
                   </div>
                 ) : (
-                  <p className="mt-4 text-success font-semibold">It's your turn!</p>
+                  <p className="text-success font-semibold">It's your turn!</p>
                 )}
+                <Button onClick={handleLeaveQueue} variant="outline" className="w-full mt-2">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Leave Queue
+                </Button>
               </div>
             ) : (
               <Button onClick={handleGetToken} size="lg" className="w-full" disabled={isLoading || service?.status === 'Closed'}>
