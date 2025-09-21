@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Ticket, ArrowRight, UserCheck, Home as HomeIcon, Search, Plus, BarChart3, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
+import type { Queue, QueueUser } from '@/context/QueueContext';
 
 type UserToken = {
   serviceId: string;
@@ -32,18 +33,20 @@ export default function QueuesPage() {
       const userTokens: UserToken[] = [];
       services.forEach(service => {
         if (service.type === 'queue') {
-          const userTokenStr = localStorage.getItem(`userToken_${service.id}_${user.uid}`);
-          if (userTokenStr) {
-            const currentToken = Number(localStorage.getItem(`currentToken_${service.id}`) || '0');
-            const totalTokens = Number(localStorage.getItem(`totalTokens_${service.id}`) || '0');
-            userTokens.push({
-              serviceId: service.id,
-              serviceName: service.name,
-              icon: service.icon,
-              token: Number(userTokenStr),
-              currentToken: currentToken,
-              totalInQueue: Math.max(0, totalTokens - currentToken),
-            });
+          const queueDataStr = localStorage.getItem(`queue_${service.id}`);
+          if (queueDataStr) {
+            const queue: Queue = JSON.parse(queueDataStr);
+            const userInQueue = queue.users.find((u: QueueUser) => u.uid === user.uid);
+            if (userInQueue) {
+              userTokens.push({
+                serviceId: service.id,
+                serviceName: service.name,
+                icon: service.icon,
+                token: userInQueue.token,
+                currentToken: queue.currentToken,
+                totalInQueue: queue.users.filter(u => u.token > queue.currentToken).length,
+              });
+            }
           }
         }
       });
@@ -52,10 +55,14 @@ export default function QueuesPage() {
 
     getActiveTokens();
 
-    // Listen for storage changes to update UI in real-time
-    window.addEventListener('storage', getActiveTokens);
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key?.startsWith('queue_')) {
+        getActiveTokens();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
     return () => {
-      window.removeEventListener('storage', getActiveTokens);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [user]);
 

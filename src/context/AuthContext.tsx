@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 // NOTE: This is a mock authentication system for prototyping.
 // It uses localStorage and is NOT secure for production use.
 
-type UserData = {
+export type UserData = {
   uid: string;
   email: string;
   displayName: string;

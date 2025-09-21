@@ -10,6 +10,7 @@ import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import type { Queue } from '@/context/QueueContext';
 
 type QueueStatus = {
   [serviceId: string]: number;
@@ -38,34 +39,32 @@ export default function Home() {
       const activeUserTokens: { serviceId: string; token: number }[] = [];
 
       services.forEach(service => {
-        if (typeof window !== 'undefined') {
-          // Get active tokens for the current user
-          if (user && service.type === 'queue') {
-            const userToken = localStorage.getItem(`userToken_${service.id}_${user.uid}`);
-            if (userToken) {
-              activeUserTokens.push({ serviceId: service.id, token: Number(userToken) });
-            }
-          }
+        if (typeof window !== 'undefined' && service.type === 'queue') {
+          const queueDataStr = localStorage.getItem(`queue_${service.id}`);
+          const queue: Queue = queueDataStr ? JSON.parse(queueDataStr) : { currentToken: 0, totalTokens: 0, users: [] };
+          
+          newQueueStatus[service.id] = Math.max(0, queue.users.filter(u => u.token > queue.currentToken).length);
 
-          // Get queue length for all queue services
-          if (service.type === 'queue') {
-            const current = Number(localStorage.getItem(`currentToken_${service.id}`) || '0');
-            const total = Number(localStorage.getItem(`totalTokens_${service.id}`) || '0');
-            newQueueStatus[service.id] = Math.max(0, total - current);
+          if (user) {
+            const userInQueue = queue.users.find(u => u.uid === user.uid);
+            if (userInQueue) {
+              activeUserTokens.push({ serviceId: service.id, token: userInQueue.token });
+            }
           }
         }
       });
 
       setQueueStatus(newQueueStatus);
-      // For this demo, we'll just show the first active token. A real app might show more.
       setActiveTokens(activeUserTokens.slice(0, 1));
     };
 
     getQueueStatus();
 
     // Listen for storage changes to update UI in real-time
-    const handleStorageChange = () => {
-      getQueueStatus();
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key?.startsWith('queue_')) {
+        getQueueStatus();
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);

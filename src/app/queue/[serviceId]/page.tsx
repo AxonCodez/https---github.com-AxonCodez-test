@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Ticket, Users, Timer, LogOut } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, UserData } from '@/context/AuthContext';
+import type { Queue, QueueUser } from '@/context/QueueContext';
 
 export default function QueuePage() {
   const params = useParams();
@@ -17,93 +18,109 @@ export default function QueuePage() {
   const { user, loading: authLoading } = useAuth();
   
   const [service, setService] = useState(services.find(s => s.id === serviceId));
-  const [currentToken, setCurrentToken] = useState<number | null>(null);
-  const [userToken, setUserToken] = useState<number | null>(null);
-  const [totalTokens, setTotalTokens] = useState<number | null>(null);
+  const [queue, setQueue] = useState<Queue | null>(null);
+  const [userInQueue, setUserInQueue] = useState<QueueUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   const notificationSentRef = useRef(false);
+
+  // Function to get the latest queue data from localStorage
+  const getQueueData = () => {
+    const queueDataStr = localStorage.getItem(`queue_${serviceId}`);
+    return queueDataStr ? JSON.parse(queueDataStr) : { currentToken: 0, totalTokens: 0, users: [] };
+  };
 
   useEffect(() => {
     if (!serviceId || authLoading) return;
 
     setService(services.find(s => s.id === serviceId));
 
-    if (user) {
-      const storedUserToken = localStorage.getItem(`userToken_${serviceId}_${user.uid}`);
-      if (storedUserToken) {
-        setUserToken(Number(storedUserToken));
-        notificationSentRef.current = false; // Reset notification status on token change
+    const updateState = () => {
+      const currentQueue = getQueueData();
+      setQueue(currentQueue);
+      if (user) {
+        const foundUser = currentQueue.users.find((u: QueueUser) => u.uid === user.uid) || null;
+        setUserInQueue(foundUser);
+        if (foundUser) {
+          notificationSentRef.current = false;
+        }
+      } else {
+        setUserInQueue(null);
       }
-    } else {
-      // If user logs out, clear their token
-      setUserToken(null);
-    }
-
-    const getStatus = () => {
-      const current = localStorage.getItem(`currentToken_${serviceId}`);
-      const total = localStorage.getItem(`totalTokens_${serviceId}`);
-      setCurrentToken(current ? Number(current) : 0);
-      setTotalTokens(total ? Number(total) : (current ? Number(current) : 0));
       setIsLoading(false);
     };
 
-    getStatus();
-    const interval = setInterval(getStatus, 3000); // Poll for updates
+    updateState();
 
-    window.addEventListener('storage', getStatus); // Listen for changes from other tabs
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('storage', getStatus);
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === `queue_${serviceId}`) {
+        updateState();
+      }
     };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+
   }, [serviceId, user, authLoading]);
 
-  const isMyTurn = userToken !== null && currentToken !== null && userToken <= currentToken;
+  const isMyTurn = userInQueue && queue && userInQueue.token <= queue.currentToken;
 
   useEffect(() => {
     if (isMyTurn && !notificationSentRef.current) {
       const permission = localStorage.getItem('notification_permission');
       if (permission === 'granted' && service) {
         new Notification("It's your turn!", {
-          body: `Your token #${userToken} for ${service.name} is now being served.`,
-          icon: '/favicon.ico', // Optional: add an icon
+          body: `Your token #${userInQueue?.token} for ${service.name} is now being served.`,
+          icon: '/favicon.ico',
         });
-        notificationSentRef.current = true; // Mark notification as sent
+        notificationSentRef.current = true;
       }
     }
-  }, [isMyTurn, userToken, service]);
+  }, [isMyTurn, userInQueue, service]);
 
 
   const handleGetToken = () => {
-    if (totalTokens === null || !user) return;
-    const newUserToken = totalTokens + 1;
-    setUserToken(newUserToken);
-    setTotalTokens(newUserToken);
-    localStorage.setItem(`userToken_${serviceId}_${user.uid}`, String(newUserToken));
-    localStorage.setItem(`totalTokens_${serviceId}`, String(newUserToken));
-    notificationSentRef.current = false; // Reset when getting a new token
+    if (!user || !queue) return;
+    
+    const currentQueue = getQueueData();
+    const newUserToken = currentQueue.totalTokens + 1;
+    
+    const newUserInQueue: QueueUser = {
+      uid: user.uid,
+      name: user.displayName || 'Anonymous',
+      token: newUserToken,
+    };
+    
+    currentQueue.totalTokens = newUserToken;
+    currentQueue.users.push(newUserInQueue);
+    
+    localStorage.setItem(`queue_${serviceId}`, JSON.stringify(currentQueue));
+    setQueue(currentQueue);
+    setUserInQueue(newUserInQueue);
+    notificationSentRef.current = false;
   };
   
   const handleLeaveQueue = () => {
-    if (userToken === null || !user) return;
+    if (!user || !userInQueue) return;
 
-    if (totalTokens !== null && userToken === totalTokens) {
-      const newTotal = totalTokens - 1;
-      setTotalTokens(newTotal);
-      localStorage.setItem(`totalTokens_${serviceId}`, String(newTotal));
-    }
-
-    setUserToken(null);
-    localStorage.removeItem(`userToken_${serviceId}_${user.uid}`);
+    const currentQueue = getQueueData();
+    currentQueue.users = currentQueue.users.filter((u: QueueUser) => u.uid !== user.uid);
+    
+    localStorage.setItem(`queue_${serviceId}`, JSON.stringify(currentQueue));
+    setQueue(currentQueue);
+    setUserInQueue(null);
   };
 
   if (!isLoading && !service) {
     notFound();
   }
 
-  const peopleAhead = userToken && currentToken !== null ? userToken - currentToken - 1 : 0;
+  const peopleAhead = userInQueue && queue ? userInQueue.token - queue.currentToken - 1 : 0;
   const estimatedWaitTime = peopleAhead > 0 ? peopleAhead * 2 : 0; // Assuming 2 mins per person
+  const totalInQueue = queue ? queue.users.filter(u => u.token > queue.currentToken).length : 0;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -127,19 +144,19 @@ export default function QueuePage() {
             <div className="grid grid-cols-2 gap-4 w-full text-center">
               <div className="bg-muted p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">Now Serving</p>
-                {isLoading ? <Skeleton className="h-10 w-20 mx-auto mt-1" /> : <p className="text-4xl font-bold text-primary">{`#${currentToken ?? 0}`}</p>}
+                {isLoading ? <Skeleton className="h-10 w-20 mx-auto mt-1" /> : <p className="text-4xl font-bold text-primary">{`#${queue?.currentToken ?? 0}`}</p>}
               </div>
               <div className="bg-muted p-4 rounded-lg">
                 <p className="text-sm text-muted-foreground">Total in Queue</p>
-                 {isLoading ? <Skeleton className="h-10 w-20 mx-auto mt-1" /> : <p className="text-4xl font-bold">{totalTokens ?? (currentToken ?? 0)}</p>}
+                 {isLoading ? <Skeleton className="h-10 w-20 mx-auto mt-1" /> : <p className="text-4xl font-bold">{totalInQueue}</p>}
               </div>
             </div>
 
-            {userToken ? (
+            {userInQueue ? (
               <div className="text-center p-6 border rounded-lg w-full bg-primary/5 flex flex-col items-center gap-4">
                 <div>
                   <p className="text-lg font-medium text-primary">Your Token</p>
-                  <p className="text-6xl font-extrabold text-primary my-2">#{userToken}</p>
+                  <p className="text-6xl font-extrabold text-primary my-2">#{userInQueue.token}</p>
                 </div>
                 {isMyTurn ? (
                   <p className="text-success font-semibold text-lg animate-pulse">It's your turn!</p>
