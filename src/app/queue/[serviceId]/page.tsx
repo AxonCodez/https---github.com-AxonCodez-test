@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import { services } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +21,8 @@ export default function QueuePage() {
   const [userToken, setUserToken] = useState<number | null>(null);
   const [totalTokens, setTotalTokens] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const notificationSentRef = useRef(false);
 
   useEffect(() => {
     if (!serviceId || authLoading) return;
@@ -31,6 +33,7 @@ export default function QueuePage() {
       const storedUserToken = localStorage.getItem(`userToken_${serviceId}_${user.uid}`);
       if (storedUserToken) {
         setUserToken(Number(storedUserToken));
+        notificationSentRef.current = false; // Reset notification status on token change
       }
     } else {
       // If user logs out, clear their token
@@ -56,6 +59,22 @@ export default function QueuePage() {
     };
   }, [serviceId, user, authLoading]);
 
+  const isMyTurn = userToken !== null && currentToken !== null && userToken <= currentToken;
+
+  useEffect(() => {
+    if (isMyTurn && !notificationSentRef.current) {
+      const permission = localStorage.getItem('notification_permission');
+      if (permission === 'granted' && service) {
+        new Notification("It's your turn!", {
+          body: `Your token #${userToken} for ${service.name} is now being served.`,
+          icon: '/favicon.ico', // Optional: add an icon
+        });
+        notificationSentRef.current = true; // Mark notification as sent
+      }
+    }
+  }, [isMyTurn, userToken, service]);
+
+
   const handleGetToken = () => {
     if (totalTokens === null || !user) return;
     const newUserToken = totalTokens + 1;
@@ -63,6 +82,7 @@ export default function QueuePage() {
     setTotalTokens(newUserToken);
     localStorage.setItem(`userToken_${serviceId}_${user.uid}`, String(newUserToken));
     localStorage.setItem(`totalTokens_${serviceId}`, String(newUserToken));
+    notificationSentRef.current = false; // Reset when getting a new token
   };
   
   const handleLeaveQueue = () => {
@@ -84,7 +104,6 @@ export default function QueuePage() {
 
   const peopleAhead = userToken && currentToken !== null ? userToken - currentToken - 1 : 0;
   const estimatedWaitTime = peopleAhead > 0 ? peopleAhead * 2 : 0; // Assuming 2 mins per person
-  const isMyTurn = userToken !== null && currentToken !== null && userToken <= currentToken;
 
   return (
     <div className="flex flex-col min-h-screen">
