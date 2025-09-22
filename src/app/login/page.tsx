@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 export default function LoginPage() {
   const { user, loading, login } = useAuth();
@@ -67,12 +69,18 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="flex flex-col gap-4">
+              <Alert variant="default" className="bg-primary/10 border-primary/20">
+                <Info className="h-4 w-4 text-primary/80" />
+                <AlertDescription className="text-xs text-primary/90">
+                  Please use your official <strong>@vitstudent.ac.in</strong> email to log in.
+                </AlertDescription>
+              </Alert>
               <div className="grid w-full items-center gap-1.5">
                 <Label htmlFor="email">Email</Label>
                 <Input 
                   type="email" 
                   id="email" 
-                  placeholder="student@example.com"
+                  placeholder="student@vitstudent.ac.in"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required 
