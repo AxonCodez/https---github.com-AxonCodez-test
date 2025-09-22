@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useState, useEffect } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { Queue } from '@/context/QueueContext';
+import { cn } from '@/lib/utils';
 
 type QueueStatus = {
   [serviceId: string]: number;
@@ -107,6 +108,13 @@ export default function Home() {
     };
   }, [user, allServices]);
 
+  const getQueueColorClass = (count: number | undefined): string => {
+    if (count === undefined) return 'bg-secondary hover:bg-muted';
+    if (count < 2) return 'bg-success/10 hover:bg-success/20 border-success/20'; // Green
+    if (count <= 5) return 'bg-yellow-400/10 hover:bg-yellow-400/20 border-yellow-400/20'; // Yellow
+    return 'bg-destructive/10 hover:bg-destructive/20 border-destructive/20'; // Red
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-primary">
       <Header />
@@ -177,26 +185,30 @@ export default function Home() {
               <Link href="/queues" className="text-sm font-semibold text-primary">See all queues</Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {queueServices.map(service => (
-                <Link href={`/queue/${service.id}`} key={service.id}>
-                  <Card className="bg-secondary hover:bg-muted transition-colors">
-                    <CardContent className="p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-primary/10 p-2 rounded-lg">
-                          <BarChart3 className="w-6 h-6 text-primary" />
+              {queueServices.map(service => {
+                const queueLength = queueStatus[service.id];
+                const cardColorClass = getQueueColorClass(queueLength);
+                return (
+                  <Link href={`/queue/${service.id}`} key={service.id}>
+                    <Card className={cn("transition-colors", cardColorClass)}>
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-primary/10 p-2 rounded-lg">
+                            <BarChart3 className="w-6 h-6 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-semibold">{service.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              In queue - {queueLength ?? 0} {queueLength === 1 ? 'person' : 'people'}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold">{service.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            In queue - {queueStatus[service.id] ?? 0} {queueStatus[service.id] === 1 ? 'person' : 'people'}
-                          </p>
-                        </div>
-                      </div>
-                      <ArrowRight className="w-5 h-5 text-muted-foreground" />
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+                        <ArrowRight className="w-5 h-5 text-muted-foreground" />
+                      </CardContent>
+                    </Card>
+                  </Link>
+                )
+              })}
             </div>
           </CardContent>
         </Card>
@@ -238,4 +250,5 @@ export default function Home() {
       </footer>
     </div>
   );
-}
+
+    
