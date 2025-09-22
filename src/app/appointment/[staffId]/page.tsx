@@ -37,13 +37,15 @@ export default function AppointmentPage() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setService(getServices().find(s => s.id === staffId) || null);
+    const currentService = getServices().find(s => s.id === staffId);
+    setService(currentService || null);
     setIsClient(true);
-    // In a real app, fetch booked slots from an API.
-    // For demo, we use localStorage to persist bookings for the session.
-    const storedBookings: Appointment[] = JSON.parse(localStorage.getItem(`appointments_${staffId}`) || '[]');
-    const preBooked = mockAppointments[staffId]?.map(a => a.time) || [];
-    setBookedSlots([...preBooked, ...storedBookings.map(b => b.time)]);
+    
+    if (currentService) {
+      const storedBookings: Appointment[] = JSON.parse(localStorage.getItem(`appointments_${staffId}`) || '[]');
+      const preBooked = mockAppointments[staffId]?.map(a => a.time) || [];
+      setBookedSlots([...preBooked, ...storedBookings.map(b => b.time)]);
+    }
   }, [staffId]);
   
   const handleSelectSlot = (time: string) => {
@@ -82,6 +84,8 @@ export default function AppointmentPage() {
   if (service === null || service.type !== 'appointment') {
     notFound();
   }
+
+  const availableTimeSlots = service.timeSlots || allTimeSlots;
 
   if (confirmedBooking) {
     return (
@@ -127,7 +131,7 @@ export default function AppointmentPage() {
             <CardContent>
               <h3 className="text-lg font-semibold text-center mb-6">Available Time Slots for Today</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {allTimeSlots.map((time) => {
+                {availableTimeSlots.map((time) => {
                   const isBooked = isClient && bookedSlots.includes(time);
                   return (
                     <Button
@@ -164,3 +168,5 @@ export default function AppointmentPage() {
     </>
   );
 }
+
+    

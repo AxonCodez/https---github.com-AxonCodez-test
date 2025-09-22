@@ -10,19 +10,26 @@ export type Service = {
   description: string;
   gender?: 'male' | 'female' | 'all';
   assignedAdmin?: string; // Email of the admin assigned to this service
+  timeSlots?: string[]; // Custom time slots for appointments
 };
 
 export const serviceIcons = {
  Utensils, Dumbbell, BookUser, Users, Building, Ticket
 };
 
+export const timeSlots = [
+  "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+  "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
+  "04:00 PM"
+];
+
 const initialServices: Service[] = [
   { id: 'mens-mess-1', name: 'Men\'s Mess 1', type: 'queue', status: 'Open', iconName: 'Utensils', description: 'Join the queue for the main men\'s mess.', gender: 'male' },
   { id: 'womens-mess-1', name: 'Women\'s Mess 1', type: 'queue', status: 'Open', iconName: 'Utensils', description: 'Queue up for the main women\'s mess.', gender: 'female' },
   { id: 'main-gym', name: 'Main Gym', type: 'queue', status: 'Closed', iconName: 'Dumbbell', description: 'Check gym occupancy and join the waitlist.', gender: 'all' },
-  { id: 'hod-cse', name: 'HOD - CSE Dept.', type: 'appointment', status: 'Open', iconName: 'BookUser', description: 'Book an appointment with the Head of Department.', assignedAdmin: 'admin1@example.com' },
-  { id: 'proctor-jane', name: 'Proctor - Jane Doe', type: 'appointment', status: 'Open', iconName: 'Users', description: 'Schedule a meeting with your proctor.', assignedAdmin: 'admin1@example.com' },
-  { id: 'admin-office', name: 'Admin Office', type: 'appointment', status: 'Closed', iconName: 'Building', description: 'Book a slot for administrative services.', assignedAdmin: 'admin@example.com' },
+  { id: 'hod-cse', name: 'HOD - CSE Dept.', type: 'appointment', status: 'Open', iconName: 'BookUser', description: 'Book an appointment with the Head of Department.', assignedAdmin: 'admin1@example.com', timeSlots: [...timeSlots] },
+  { id: 'proctor-jane', name: 'Proctor - Jane Doe', type: 'appointment', status: 'Open', iconName: 'Users', description: 'Schedule a meeting with your proctor.', assignedAdmin: 'admin1@example.com', timeSlots: ["11:00 AM", "11:30 AM", "04:00 PM"] },
+  { id: 'admin-office', name: 'Admin Office', type: 'appointment', status: 'Closed', iconName: 'Building', description: 'Book a slot for administrative services.', assignedAdmin: 'admin@example.com', timeSlots: [] },
   { id: 'out-pass-gate-1', name: 'Out-Pass Gate 1', type: 'queue', status: 'Open', iconName: 'Ticket', description: 'Join the queue for out-pass verification.', gender: 'all' }
 ];
 
@@ -52,6 +59,10 @@ export const getServices = (): Service[] => {
 export const addService = (newService: Service): void => {
   if (typeof window === 'undefined') return;
   const currentServices = getServices();
+  // For new appointment services, assign default time slots
+  if (newService.type === 'appointment' && !newService.timeSlots) {
+    newService.timeSlots = [...timeSlots];
+  }
   const updatedServices = [...currentServices, newService];
   localStorage.setItem(LOCAL_STORAGE_SERVICES_KEY, JSON.stringify(updatedServices));
 };
@@ -82,12 +93,6 @@ export const staff = [
   { id: 'admin-office', name: 'Admin Office', title: 'Administrative Services' },
 ];
 
-export const timeSlots = [
-  "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
-  "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
-  "04:00 PM"
-];
-
 // Mock data for pre-booked appointments
 export const appointments: Record<string, {time: string, student: string}[]> = {
   'hod-cse': [
@@ -99,3 +104,5 @@ export const appointments: Record<string, {time: string, student: string}[]> = {
   ],
   'admin-office': []
 };
+
+    

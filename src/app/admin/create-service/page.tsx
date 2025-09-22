@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { addService, serviceIcons, Service } from '@/lib/data';
+import { addService, serviceIcons, Service, timeSlots as defaultTimeSlots } from '@/lib/data';
 import type { Icon as LucideIcon } from 'lucide-react';
 
 export default function CreateServicePage() {
@@ -48,6 +48,7 @@ export default function CreateServicePage() {
       iconName,
       gender,
       assignedAdmin: type === 'appointment' ? assignedAdmin : undefined,
+      timeSlots: type === 'appointment' ? [...defaultTimeSlots] : undefined,
       status: 'Open', // Default to open
     };
     
@@ -175,3 +176,5 @@ export default function CreateServicePage() {
     </div>
   );
 }
+
+    

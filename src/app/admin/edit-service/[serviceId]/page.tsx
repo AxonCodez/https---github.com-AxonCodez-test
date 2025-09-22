@@ -11,17 +11,17 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { getServices, updateService, serviceIcons, Service } from '@/lib/data';
-import type { Icon as LucideIcon } from 'lucide-react';
+import { getServices, updateService, serviceIcons, Service, timeSlots as defaultTimeSlots } from '@/lib/data';
 import { useAuth } from '@/context/AuthContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
+import { Info, X, PlusCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export default function EditServicePage() {
   const router = useRouter();
   const params = useParams();
   const serviceId = params.serviceId as string;
-  const { user, isAdmin, isSuperAdmin, loading: authLoading } = useAuth();
+  const { user, isSuperAdmin, loading: authLoading } = useAuth();
 
   const [service, setService] = useState<Service | null>(null);
   const [name, setName] = useState('');
@@ -31,6 +31,8 @@ export default function EditServicePage() {
   const [gender, setGender] = useState<'male' | 'female' | 'all'>('all');
   const [assignedAdmin, setAssignedAdmin] = useState('');
   const [loading, setLoading] = useState(false);
+  const [timeSlots, setTimeSlots] = useState<string[]>([]);
+  const [newTimeSlot, setNewTimeSlot] = useState('');
   const { toast } = useToast();
   
   useEffect(() => {
@@ -38,7 +40,6 @@ export default function EditServicePage() {
 
     const existingService = getServices().find(s => s.id === serviceId);
     if (existingService) {
-        // Authorization check
         if (!isSuperAdmin && existingService.assignedAdmin !== user?.email) {
             router.push('/admin/login');
             return;
@@ -51,6 +52,7 @@ export default function EditServicePage() {
       setIconName(existingService.iconName);
       setGender(existingService.gender || 'all');
       setAssignedAdmin(existingService.assignedAdmin || '');
+      setTimeSlots(existingService.timeSlots || defaultTimeSlots);
     } else {
       notFound();
     }
@@ -61,6 +63,28 @@ export default function EditServicePage() {
   }
   
   const iconEntries = Object.entries(serviceIcons);
+
+  const handleAddSlot = () => {
+    const formattedTime = newTimeSlot.trim().toUpperCase();
+    if (formattedTime && !timeSlots.includes(formattedTime)) {
+        const tempDate = new Date(`1970-01-01T${formattedTime}`);
+        if (!isNaN(tempDate.getTime())) {
+             const timeString = tempDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+             setTimeSlots(prev => [...prev, timeString].sort());
+             setNewTimeSlot('');
+        } else if (/^\d{1,2}:\d{2}\s?(AM|PM)$/i.test(formattedTime)) {
+             setTimeSlots(prev => [...prev, formattedTime].sort());
+             setNewTimeSlot('');
+        } else {
+            toast({ variant: "destructive", title: "Invalid Time Format", description: "Please use HH:MM AM/PM." });
+        }
+    }
+  };
+
+  const handleRemoveSlot = (slot: string) => {
+    setTimeSlots(prev => prev.filter(s => s !== slot));
+  };
+
 
   const handleUpdateService = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,13 +101,14 @@ export default function EditServicePage() {
 
     const updatedServiceData: Service = {
       ...service,
-      id: service.id, // ID cannot be changed
+      id: service.id,
       name,
       description,
       type,
       iconName,
       gender: type === 'queue' ? gender : 'all',
       assignedAdmin: type === 'appointment' ? assignedAdmin : undefined,
+      timeSlots: type === 'appointment' ? timeSlots : undefined,
       status: service.status, 
     };
     
@@ -94,7 +119,6 @@ export default function EditServicePage() {
       description: `Successfully updated the "${name}" service.`,
     });
 
-    // Trigger a storage event to notify other tabs
     window.dispatchEvent(new StorageEvent('storage', {
         key: 'demo_services',
         newValue: 'updated',
@@ -118,7 +142,7 @@ export default function EditServicePage() {
             {readOnlyForAppointmentAdmin && (
                  <Alert className="mb-4">
                     <Info className="h-4 w-4" />
-                    <AlertDescription>As an appointment admin, you can only edit the service description.</AlertDescription>
+                    <AlertDescription>As an appointment admin, you can only edit certain fields like time slots.</AlertDescription>
                 </Alert>
             )}
             <form onSubmit={handleUpdateService} className="flex flex-col gap-4">
@@ -141,6 +165,7 @@ export default function EditServicePage() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   required 
+                  disabled={readOnlyForAppointmentAdmin}
                 />
               </div>
 
@@ -194,16 +219,45 @@ export default function EditServicePage() {
               )}
 
               {type === 'appointment' && (
-                <div className="grid w-full items-center gap-1.5">
-                    <Label htmlFor="assignedAdmin">Assigned Admin Email</Label>
-                    <Input 
-                    id="assignedAdmin" 
-                    value={assignedAdmin}
-                    onChange={(e) => setAssignedAdmin(e.target.value)}
-                    required 
-                    disabled={readOnlyForAppointmentAdmin}
-                    />
-                </div>
+                <>
+                  <div className="grid w-full items-center gap-1.5">
+                      <Label htmlFor="assignedAdmin">Assigned Admin Email</Label>
+                      <Input 
+                      id="assignedAdmin" 
+                      value={assignedAdmin}
+                      onChange={(e) => setAssignedAdmin(e.target.value)}
+                      required 
+                      disabled={readOnlyForAppointmentAdmin}
+                      />
+                  </div>
+
+                  <div className="grid w-full items-center gap-2 rounded-lg border p-4">
+                    <Label>Manage Time Slots</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="e.g., 04:30 PM"
+                        value={newTimeSlot}
+                        onChange={(e) => setNewTimeSlot(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSlot())}
+                      />
+                      <Button type="button" variant="outline" onClick={handleAddSlot}>Add</Button>
+                    </div>
+                    {timeSlots.length > 0 ? (
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {timeSlots.map(slot => (
+                          <Badge key={slot} variant="secondary" className="flex items-center gap-1">
+                            {slot}
+                            <button type="button" onClick={() => handleRemoveSlot(slot)} className="rounded-full hover:bg-muted-foreground/20">
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center pt-2">No time slots added.</p>
+                    )}
+                  </div>
+                </>
               )}
 
               <Button className="w-full mt-4" type="submit" disabled={loading}>
@@ -217,3 +271,5 @@ export default function EditServicePage() {
     </div>
   );
 }
+
+    
