@@ -46,7 +46,7 @@ const useServices = () => {
 
 
 export default function AdminPage() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, isSuperAdmin } = useAuth();
   const router = useRouter();
   const { services, updateServices } = useServices();
   const { toast } = useToast();
@@ -87,8 +87,13 @@ export default function AdminPage() {
     );
   }
 
-  const queueServices = services.filter(s => s.type === 'queue');
-  const appointmentServices = services.filter(s => s.type === 'appointment');
+  // Super admins see all services, appointment admins only see their own.
+  const visibleServices = isSuperAdmin 
+    ? services 
+    : services.filter(s => s.assignedAdmin === user?.email);
+
+  const queueServices = visibleServices.filter(s => s.type === 'queue');
+  const appointmentServices = visibleServices.filter(s => s.type === 'appointment');
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -99,75 +104,86 @@ export default function AdminPage() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           
-          <Card className="flex flex-col lg:col-span-1">
-            <CardHeader>
-              <CardTitle>Manage Queues</CardTitle>
-              <CardDescription>Advance the serving token for queued services.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow flex flex-col gap-3">
-              {queueServices.map(service => (
-                <div key={service.id} className="group p-4 rounded-lg border bg-background hover:bg-muted transition-all">
-                  <Link href={`/admin/queue/${service.id}`} className="block">
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-semibold">{service.name}</h3>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </Link>
-                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-transparent group-hover:border-border">
-                     <Link href={`/admin/edit-service/${service.id}`}>
-                      <Button variant="ghost" size="sm" className="text-xs h-7">
-                        <Edit className="mr-1 h-3 w-3"/> Edit
-                      </Button>
+          { (isSuperAdmin || queueServices.length > 0) && (
+            <Card className="flex flex-col lg:col-span-1">
+              <CardHeader>
+                <CardTitle>Manage Queues</CardTitle>
+                <CardDescription>Advance the serving token for queued services.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow flex flex-col gap-3">
+                {queueServices.map(service => (
+                  <div key={service.id} className="group p-4 rounded-lg border bg-background hover:bg-muted transition-all">
+                    <Link href={`/admin/queue/${service.id}`} className="block">
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-semibold">{service.name}</h3>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
                     </Link>
-                    <Button variant="ghost" size="sm" className="text-xs h-7 text-destructive hover:text-destructive" onClick={() => setServiceToDelete(service)}>
-                      <Trash2 className="mr-1 h-3 w-3"/> Delete
-                    </Button>
+                    {isSuperAdmin && (
+                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-transparent group-hover:border-border">
+                        <Link href={`/admin/edit-service/${service.id}`}>
+                          <Button variant="ghost" size="sm" className="text-xs h-7">
+                            <Edit className="mr-1 h-3 w-3"/> Edit
+                          </Button>
+                        </Link>
+                        <Button variant="ghost" size="sm" className="text-xs h-7 text-destructive hover:text-destructive" onClick={() => setServiceToDelete(service)}>
+                          <Trash2 className="mr-1 h-3 w-3"/> Delete
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card className="flex flex-col lg:col-span-1">
-            <CardHeader>
-              <CardTitle>View Appointments</CardTitle>
-              <CardDescription>See the schedule of appointments for the day.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow flex flex-col gap-3">
-              {appointmentServices.map(service => (
-                <div key={service.id} className="group p-4 rounded-lg border bg-background hover:bg-muted transition-all">
-                  <Link href={`/admin/appointments/${service.id}`} className="block">
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-semibold">{service.name}</h3>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </Link>
-                   <div className="flex items-center gap-2 mt-2 pt-2 border-t border-transparent group-hover:border-border">
-                     <Link href={`/admin/edit-service/${service.id}`}>
-                      <Button variant="ghost" size="sm" className="text-xs h-7">
-                        <Edit className="mr-1 h-3 w-3"/> Edit
-                      </Button>
-                    </Link>
-                    <Button variant="ghost" size="sm" className="text-xs h-7 text-destructive hover:text-destructive" onClick={() => setServiceToDelete(service)}>
-                      <Trash2 className="mr-1 h-3 w-3"/> Delete
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-          
-          <Card className="flex flex-col lg:col-span-1 border-dashed hover:border-solid hover:border-primary transition-all">
-             <Link href="/admin/create-service" className="h-full">
-              <CardContent className="h-full flex flex-col items-center justify-center text-center p-6">
-                <PlusCircle className="h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold text-foreground">Create New Service</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Add a new queue or appointment-based service.
-                </p>
+                ))}
               </CardContent>
-            </Link>
-          </Card>
+            </Card>
+          )}
+
+
+          { (isSuperAdmin || appointmentServices.length > 0) && (
+            <Card className="flex flex-col lg:col-span-1">
+              <CardHeader>
+                <CardTitle>View Appointments</CardTitle>
+                <CardDescription>See the schedule of appointments for the day.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow flex flex-col gap-3">
+                {appointmentServices.map(service => (
+                  <div key={service.id} className="group p-4 rounded-lg border bg-background hover:bg-muted transition-all">
+                    <Link href={`/admin/appointments/${service.id}`} className="block">
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-semibold">{service.name}</h3>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </Link>
+                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-transparent group-hover:border-border">
+                      <Link href={`/admin/edit-service/${service.id}`}>
+                        <Button variant="ghost" size="sm" className="text-xs h-7">
+                          <Edit className="mr-1 h-3 w-3"/> Edit
+                        </Button>
+                      </Link>
+                      {isSuperAdmin && (
+                        <Button variant="ghost" size="sm" className="text-xs h-7 text-destructive hover:text-destructive" onClick={() => setServiceToDelete(service)}>
+                          <Trash2 className="mr-1 h-3 w-3"/> Delete
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+          
+          { isSuperAdmin && (
+            <Card className="flex flex-col lg:col-span-1 border-dashed hover:border-solid hover:border-primary transition-all">
+              <Link href="/admin/create-service" className="h-full">
+                <CardContent className="h-full flex flex-col items-center justify-center text-center p-6">
+                  <PlusCircle className="h-12 w-12 text-muted-foreground" />
+                  <h3 className="mt-4 text-lg font-semibold text-foreground">Create New Service</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Add a new queue or appointment-based service.
+                  </p>
+                </CardContent>
+              </Link>
+            </Card>
+          )}
 
         </div>
       </main>

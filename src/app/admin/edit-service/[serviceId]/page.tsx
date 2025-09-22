@@ -13,11 +13,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { getServices, updateService, serviceIcons, Service } from '@/lib/data';
 import type { Icon as LucideIcon } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 export default function EditServicePage() {
   const router = useRouter();
   const params = useParams();
   const serviceId = params.serviceId as string;
+  const { user, isAdmin, isSuperAdmin, loading: authLoading } = useAuth();
 
   const [service, setService] = useState<Service | null>(null);
   const [name, setName] = useState('');
@@ -25,22 +29,32 @@ export default function EditServicePage() {
   const [type, setType] = useState<'queue' | 'appointment' | ''>('');
   const [iconName, setIconName] = useState<keyof typeof serviceIcons | ''>('');
   const [gender, setGender] = useState<'male' | 'female' | 'all'>('all');
+  const [assignedAdmin, setAssignedAdmin] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   
   useEffect(() => {
+    if (authLoading) return;
+
     const existingService = getServices().find(s => s.id === serviceId);
     if (existingService) {
+        // Authorization check
+        if (!isSuperAdmin && existingService.assignedAdmin !== user?.email) {
+            router.push('/admin/login');
+            return;
+        }
+
       setService(existingService);
       setName(existingService.name);
       setDescription(existingService.description);
       setType(existingService.type);
       setIconName(existingService.iconName);
       setGender(existingService.gender || 'all');
+      setAssignedAdmin(existingService.assignedAdmin || '');
     } else {
       notFound();
     }
-  }, [serviceId]);
+  }, [serviceId, authLoading, isSuperAdmin, user, router]);
 
   if (!service) {
     return <div>Loading...</div>; // Or a proper loading state
@@ -68,7 +82,8 @@ export default function EditServicePage() {
       description,
       type,
       iconName,
-      gender,
+      gender: type === 'queue' ? gender : 'all',
+      assignedAdmin: type === 'appointment' ? assignedAdmin : undefined,
       status: service.status, 
     };
     
@@ -88,6 +103,8 @@ export default function EditServicePage() {
     router.push('/admin');
   };
 
+  const readOnlyForAppointmentAdmin = !isSuperAdmin;
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -98,6 +115,12 @@ export default function EditServicePage() {
             <CardDescription>Update the details for "{service.name}".</CardDescription>
           </CardHeader>
           <CardContent>
+            {readOnlyForAppointmentAdmin && (
+                 <Alert className="mb-4">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>As an appointment admin, you can only edit the service description.</AlertDescription>
+                </Alert>
+            )}
             <form onSubmit={handleUpdateService} className="flex flex-col gap-4">
               
               <div className="grid w-full items-center gap-1.5">
@@ -107,6 +130,7 @@ export default function EditServicePage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required 
+                  disabled={readOnlyForAppointmentAdmin}
                 />
               </div>
 
@@ -123,7 +147,7 @@ export default function EditServicePage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="type">Service Type</Label>
-                  <Select value={type} onValueChange={(v) => setType(v as any)} required>
+                  <Select value={type} onValueChange={(v) => setType(v as any)} required disabled={readOnlyForAppointmentAdmin}>
                     <SelectTrigger id="type">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
@@ -134,8 +158,29 @@ export default function EditServicePage() {
                   </Select>
                 </div>
                 <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="icon">Icon</Label>
+                    <Select value={iconName} onValueChange={(v) => setIconName(v as any)} required disabled={readOnlyForAppointmentAdmin}>
+                    <SelectTrigger id="icon">
+                        <SelectValue placeholder="Select an icon" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {iconEntries.map(([name, IconComponent]) => (
+                        <SelectItem key={name} value={name}>
+                            <div className="flex items-center gap-2">
+                            <IconComponent className="h-4 w-4" />
+                            <span>{name}</span>
+                            </div>
+                        </SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
+                </div>
+              </div>
+              
+              {type === 'queue' && (
+                <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="gender">Gender Specific (for Queues)</Label>
-                  <Select value={gender} onValueChange={(v) => setGender(v as any)} required disabled={type !== 'queue'}>
+                  <Select value={gender} onValueChange={(v) => setGender(v as any)} required disabled={readOnlyForAppointmentAdmin}>
                     <SelectTrigger id="gender">
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
@@ -146,26 +191,20 @@ export default function EditServicePage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="icon">Icon</Label>
-                <Select value={iconName} onValueChange={(v) => setIconName(v as any)} required>
-                  <SelectTrigger id="icon">
-                    <SelectValue placeholder="Select an icon" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {iconEntries.map(([name, IconComponent]) => (
-                      <SelectItem key={name} value={name}>
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="h-4 w-4" />
-                          <span>{name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              )}
+
+              {type === 'appointment' && (
+                <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="assignedAdmin">Assigned Admin Email</Label>
+                    <Input 
+                    id="assignedAdmin" 
+                    value={assignedAdmin}
+                    onChange={(e) => setAssignedAdmin(e.target.value)}
+                    required 
+                    disabled={readOnlyForAppointmentAdmin}
+                    />
+                </div>
+              )}
 
               <Button className="w-full mt-4" type="submit" disabled={loading}>
                 {loading ? 'Saving...' : 'Save Changes'}

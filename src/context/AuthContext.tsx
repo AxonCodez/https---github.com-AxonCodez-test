@@ -24,6 +24,7 @@ interface DemoUser extends UserData {
 interface AuthContextType {
   user: UserData | null;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   loading: boolean;
   login: (email: string, pass: string) => Promise<boolean>;
   register: (name: string, email: string, pass: string, regNo: string) => Promise<boolean>;
@@ -34,6 +35,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isAdmin: false,
+  isSuperAdmin: false,
   loading: true,
   login: async () => false,
   register: async () => false,
@@ -41,7 +43,9 @@ const AuthContext = createContext<AuthContextType>({
   updateUser: async () => false,
 });
 
-const ADMIN_EMAILS = ['admin@example.com'];
+const SUPER_ADMIN_EMAIL = 'admin@example.com';
+const APPOINTMENT_ADMIN_EMAILS = ['admin1@example.com'];
+const ADMIN_EMAILS = [SUPER_ADMIN_EMAIL, ...APPOINTMENT_ADMIN_EMAILS];
 const STUDENT_EMAIL_DOMAIN = '@vitstudent.ac.in';
 const LOCAL_STORAGE_USERS_KEY = 'demo_users';
 const LOCAL_STORAGE_SESSION_KEY = 'demo_session';
@@ -69,9 +73,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Helper to get all users from localStorage
   const getUsers = (): DemoUser[] => {
     const usersJson = localStorage.getItem(LOCAL_STORAGE_USERS_KEY);
-    return usersJson ? JSON.parse(usersJson) : ADMIN_EMAILS.map(email => ({
-      uid: `admin-${Math.random()}`, email, displayName: 'Administrator', password: 'password'
-    }));
+    if (usersJson) {
+      return JSON.parse(usersJson);
+    }
+    
+    // Initialize with default admins if not present
+    const initialAdmins: DemoUser[] = [
+      { uid: 'admin-super', email: SUPER_ADMIN_EMAIL, displayName: 'Administrator', password: 'password' },
+      { uid: 'admin-appoint-1', email: 'admin1@example.com', displayName: 'Appointment Admin 1', password: '1234' }
+    ];
+    localStorage.setItem(LOCAL_STORAGE_USERS_KEY, JSON.stringify(initialAdmins));
+    return initialAdmins;
   };
 
   // Helper to save users to localStorage
@@ -155,10 +167,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAdmin = user ? ADMIN_EMAILS.includes(user.email || '') : false;
+  const isSuperAdmin = user ? user.email === SUPER_ADMIN_EMAIL : false;
 
   const value = {
     user,
     isAdmin,
+    isSuperAdmin,
     loading,
     login,
     register,

@@ -20,6 +20,7 @@ export default function CreateServicePage() {
   const [type, setType] = useState<'queue' | 'appointment' | ''>('');
   const [iconName, setIconName] = useState<keyof typeof serviceIcons | ''>('');
   const [gender, setGender] = useState<'male' | 'female' | 'all'>('all');
+  const [assignedAdmin, setAssignedAdmin] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -46,6 +47,7 @@ export default function CreateServicePage() {
       type,
       iconName,
       gender,
+      assignedAdmin: type === 'appointment' ? assignedAdmin : undefined,
       status: 'Open', // Default to open
     };
     
@@ -112,39 +114,55 @@ export default function CreateServicePage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="gender">Gender Specific (for Queues)</Label>
-                  <Select value={gender} onValueChange={(v) => setGender(v as any)} required disabled={type !== 'queue'}>
-                    <SelectTrigger id="gender">
-                      <SelectValue placeholder="Select gender" />
+                 <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="icon">Icon</Label>
+                    <Select value={iconName} onValueChange={(v) => setIconName(v as any)} required>
+                    <SelectTrigger id="icon">
+                        <SelectValue placeholder="Select an icon" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Genders</SelectItem>
-                      <SelectItem value="male">Male Only</SelectItem>
-                      <SelectItem value="female">Female Only</SelectItem>
+                        {iconEntries.map(([name, IconComponent]) => (
+                        <SelectItem key={name} value={name}>
+                            <div className="flex items-center gap-2">
+                            <IconComponent className="h-4 w-4" />
+                            <span>{name}</span>
+                            </div>
+                        </SelectItem>
+                        ))}
                     </SelectContent>
-                  </Select>
+                    </Select>
                 </div>
               </div>
               
-              <div className="grid w-full items-center gap-1.5">
-                <Label htmlFor="icon">Icon</Label>
-                <Select value={iconName} onValueChange={(v) => setIconName(v as any)} required>
-                  <SelectTrigger id="icon">
-                    <SelectValue placeholder="Select an icon" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {iconEntries.map(([name, IconComponent]) => (
-                      <SelectItem key={name} value={name}>
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="h-4 w-4" />
-                          <span>{name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                {type === 'queue' && (
+                    <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="gender">Gender Specific (for Queues)</Label>
+                        <Select value={gender} onValueChange={(v) => setGender(v as any)} required>
+                            <SelectTrigger id="gender">
+                            <SelectValue placeholder="Select gender" />
+                            </SelectTrigger>
+                            <SelectContent>
+                            <SelectItem value="all">All Genders</SelectItem>
+                            <SelectItem value="male">Male Only</SelectItem>
+                            <SelectItem value="female">Female Only</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+
+                {type === 'appointment' && (
+                     <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="assignedAdmin">Assigned Admin Email</Label>
+                        <Input 
+                        id="assignedAdmin" 
+                        placeholder="e.g., admin1@example.com"
+                        value={assignedAdmin}
+                        onChange={(e) => setAssignedAdmin(e.target.value)}
+                        required 
+                        />
+                    </div>
+                )}
+
 
               <Button className="w-full mt-4" type="submit" disabled={loading}>
                 {loading ? 'Creating...' : 'Create Service'}

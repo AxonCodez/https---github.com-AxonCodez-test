@@ -9,6 +9,7 @@ export type Service = {
   iconName: keyof typeof serviceIcons;
   description: string;
   gender?: 'male' | 'female' | 'all';
+  assignedAdmin?: string; // Email of the admin assigned to this service
 };
 
 export const serviceIcons = {
@@ -19,9 +20,9 @@ const initialServices: Service[] = [
   { id: 'mens-mess-1', name: 'Men\'s Mess 1', type: 'queue', status: 'Open', iconName: 'Utensils', description: 'Join the queue for the main men\'s mess.', gender: 'male' },
   { id: 'womens-mess-1', name: 'Women\'s Mess 1', type: 'queue', status: 'Open', iconName: 'Utensils', description: 'Queue up for the main women\'s mess.', gender: 'female' },
   { id: 'main-gym', name: 'Main Gym', type: 'queue', status: 'Closed', iconName: 'Dumbbell', description: 'Check gym occupancy and join the waitlist.', gender: 'all' },
-  { id: 'hod-cse', name: 'HOD - CSE Dept.', type: 'appointment', status: 'Open', iconName: 'BookUser', description: 'Book an appointment with the Head of Department.' },
-  { id: 'proctor-jane', name: 'Proctor - Jane Doe', type: 'appointment', status: 'Open', iconName: 'Users', description: 'Schedule a meeting with your proctor.' },
-  { id: 'admin-office', name: 'Admin Office', type: 'appointment', status: 'Closed', iconName: 'Building', description: 'Book a slot for administrative services.' },
+  { id: 'hod-cse', name: 'HOD - CSE Dept.', type: 'appointment', status: 'Open', iconName: 'BookUser', description: 'Book an appointment with the Head of Department.', assignedAdmin: 'admin1@example.com' },
+  { id: 'proctor-jane', name: 'Proctor - Jane Doe', type: 'appointment', status: 'Open', iconName: 'Users', description: 'Schedule a meeting with your proctor.', assignedAdmin: 'admin1@example.com' },
+  { id: 'admin-office', name: 'Admin Office', type: 'appointment', status: 'Closed', iconName: 'Building', description: 'Book a slot for administrative services.', assignedAdmin: 'admin@example.com' },
   { id: 'out-pass-gate-1', name: 'Out-Pass Gate 1', type: 'queue', status: 'Open', iconName: 'Ticket', description: 'Join the queue for out-pass verification.', gender: 'all' }
 ];
 
