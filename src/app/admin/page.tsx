@@ -87,7 +87,7 @@ export default function AdminPage() {
     );
   }
 
-  // Super admins see all services, appointment admins only see their own.
+  // Super admins see all services, other admins only see their assigned ones.
   const visibleServices = isSuperAdmin 
     ? services 
     : services.filter(s => s.assignedAdmin === user?.email);
@@ -108,7 +108,7 @@ export default function AdminPage() {
             <Card className="flex flex-col lg:col-span-1">
               <CardHeader>
                 <CardTitle>Manage Queues</CardTitle>
-                <CardDescription>Advance the serving token for queued services.</CardDescription>
+                <CardDescription>View and manage your assigned queues.</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow flex flex-col gap-3">
                 {queueServices.map(service => (
@@ -119,18 +119,18 @@ export default function AdminPage() {
                         <ArrowRight className="h-4 w-4 text-muted-foreground" />
                       </div>
                     </Link>
-                    {isSuperAdmin && (
-                      <div className="flex items-center gap-2 mt-2 pt-2 border-t border-transparent group-hover:border-border">
+                     <div className="flex items-center gap-2 mt-2 pt-2 border-t border-transparent group-hover:border-border">
                         <Link href={`/admin/edit-service/${service.id}`}>
                           <Button variant="ghost" size="sm" className="text-xs h-7">
                             <Edit className="mr-1 h-3 w-3"/> Edit
                           </Button>
                         </Link>
-                        <Button variant="ghost" size="sm" className="text-xs h-7 text-destructive hover:text-destructive" onClick={() => setServiceToDelete(service)}>
-                          <Trash2 className="mr-1 h-3 w-3"/> Delete
-                        </Button>
+                        {isSuperAdmin && (
+                          <Button variant="ghost" size="sm" className="text-xs h-7 text-destructive hover:text-destructive" onClick={() => setServiceToDelete(service)}>
+                            <Trash2 className="mr-1 h-3 w-3"/> Delete
+                          </Button>
+                        )}
                       </div>
-                    )}
                   </div>
                 ))}
               </CardContent>
@@ -142,7 +142,7 @@ export default function AdminPage() {
             <Card className="flex flex-col lg:col-span-1">
               <CardHeader>
                 <CardTitle>View Appointments</CardTitle>
-                <CardDescription>See the schedule of appointments for the day.</CardDescription>
+                <CardDescription>See schedules for your assigned services.</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow flex flex-col gap-3">
                 {appointmentServices.map(service => (

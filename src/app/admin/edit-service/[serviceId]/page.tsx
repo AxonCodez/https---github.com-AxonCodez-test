@@ -88,11 +88,11 @@ export default function EditServicePage() {
 
   const handleUpdateService = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !description || !type || !iconName) {
+    if (!name || !description || !type || !iconName || !assignedAdmin) {
       toast({
         variant: "destructive",
         title: "Validation Error",
-        description: "Please fill out all fields.",
+        description: "Please fill out all required fields, including assigned admin.",
       });
       return;
     }
@@ -107,7 +107,7 @@ export default function EditServicePage() {
       type,
       iconName,
       gender: type === 'queue' ? gender : 'all',
-      assignedAdmin: type === 'appointment' ? assignedAdmin : undefined,
+      assignedAdmin,
       timeSlots: type === 'appointment' ? timeSlots : undefined,
       status: service.status, 
     };
@@ -127,7 +127,7 @@ export default function EditServicePage() {
     router.push('/admin');
   };
 
-  const readOnlyForAppointmentAdmin = !isSuperAdmin;
+  const readOnlyForNonSuperAdmin = !isSuperAdmin;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -139,10 +139,10 @@ export default function EditServicePage() {
             <CardDescription>Update the details for "{service.name}".</CardDescription>
           </CardHeader>
           <CardContent>
-            {readOnlyForAppointmentAdmin && (
+            {readOnlyForNonSuperAdmin && (
                  <Alert className="mb-4">
                     <Info className="h-4 w-4" />
-                    <AlertDescription>As an appointment admin, you can only edit certain fields like time slots.</AlertDescription>
+                    <AlertDescription>As a service manager, you can only edit certain fields like time slots.</AlertDescription>
                 </Alert>
             )}
             <form onSubmit={handleUpdateService} className="flex flex-col gap-4">
@@ -154,7 +154,7 @@ export default function EditServicePage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required 
-                  disabled={readOnlyForAppointmentAdmin}
+                  disabled={readOnlyForNonSuperAdmin}
                 />
               </div>
 
@@ -165,14 +165,14 @@ export default function EditServicePage() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   required 
-                  disabled={readOnlyForAppointmentAdmin}
+                  disabled={readOnlyForNonSuperAdmin}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="type">Service Type</Label>
-                  <Select value={type} onValueChange={(v) => setType(v as any)} required disabled={readOnlyForAppointmentAdmin}>
+                  <Select value={type} onValueChange={(v) => setType(v as any)} required disabled={readOnlyForNonSuperAdmin}>
                     <SelectTrigger id="type">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
@@ -184,7 +184,7 @@ export default function EditServicePage() {
                 </div>
                 <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="icon">Icon</Label>
-                    <Select value={iconName} onValueChange={(v) => setIconName(v as any)} required disabled={readOnlyForAppointmentAdmin}>
+                    <Select value={iconName} onValueChange={(v) => setIconName(v as any)} required disabled={readOnlyForNonSuperAdmin}>
                     <SelectTrigger id="icon">
                         <SelectValue placeholder="Select an icon" />
                     </SelectTrigger>
@@ -202,10 +202,21 @@ export default function EditServicePage() {
                 </div>
               </div>
               
+              <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="assignedAdmin">Assigned Manager Email</Label>
+                  <Input 
+                  id="assignedAdmin" 
+                  value={assignedAdmin}
+                  onChange={(e) => setAssignedAdmin(e.target.value)}
+                  required 
+                  disabled={readOnlyForNonSuperAdmin}
+                  />
+              </div>
+              
               {type === 'queue' && (
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="gender">Gender Specific (for Queues)</Label>
-                  <Select value={gender} onValueChange={(v) => setGender(v as any)} required disabled={readOnlyForAppointmentAdmin}>
+                  <Select value={gender} onValueChange={(v) => setGender(v as any)} required disabled={readOnlyForNonSuperAdmin}>
                     <SelectTrigger id="gender">
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
@@ -219,45 +230,32 @@ export default function EditServicePage() {
               )}
 
               {type === 'appointment' && (
-                <>
-                  <div className="grid w-full items-center gap-1.5">
-                      <Label htmlFor="assignedAdmin">Assigned Admin Email</Label>
-                      <Input 
-                      id="assignedAdmin" 
-                      value={assignedAdmin}
-                      onChange={(e) => setAssignedAdmin(e.target.value)}
-                      required 
-                      disabled={readOnlyForAppointmentAdmin}
-                      />
+                <div className="grid w-full items-center gap-2 rounded-lg border p-4">
+                  <Label>Manage Time Slots</Label>
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="e.g., 04:30 PM"
+                      value={newTimeSlot}
+                      onChange={(e) => setNewTimeSlot(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSlot())}
+                    />
+                    <Button type="button" variant="outline" onClick={handleAddSlot}>Add</Button>
                   </div>
-
-                  <div className="grid w-full items-center gap-2 rounded-lg border p-4">
-                    <Label>Manage Time Slots</Label>
-                    <div className="flex gap-2">
-                      <Input 
-                        placeholder="e.g., 04:30 PM"
-                        value={newTimeSlot}
-                        onChange={(e) => setNewTimeSlot(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSlot())}
-                      />
-                      <Button type="button" variant="outline" onClick={handleAddSlot}>Add</Button>
+                  {timeSlots.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {timeSlots.map(slot => (
+                        <Badge key={slot} variant="secondary" className="flex items-center gap-1">
+                          {slot}
+                          <button type="button" onClick={() => handleRemoveSlot(slot)} className="rounded-full hover:bg-muted-foreground/20">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
                     </div>
-                    {timeSlots.length > 0 ? (
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        {timeSlots.map(slot => (
-                          <Badge key={slot} variant="secondary" className="flex items-center gap-1">
-                            {slot}
-                            <button type="button" onClick={() => handleRemoveSlot(slot)} className="rounded-full hover:bg-muted-foreground/20">
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground text-center pt-2">No time slots added.</p>
-                    )}
-                  </div>
-                </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center pt-2">No time slots added.</p>
+                  )}
+                </div>
               )}
 
               <Button className="w-full mt-4" type="submit" disabled={loading}>
@@ -271,5 +269,3 @@ export default function EditServicePage() {
     </div>
   );
 }
-
-    

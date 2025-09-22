@@ -29,11 +29,11 @@ export default function CreateServicePage() {
 
   const handleCreateService = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !description || !type || !iconName) {
+    if (!name || !description || !type || !iconName || (type && !assignedAdmin)) {
       toast({
         variant: "destructive",
         title: "Validation Error",
-        description: "Please fill out all fields.",
+        description: "Please fill out all required fields, including assigned admin.",
       });
       return;
     }
@@ -47,7 +47,7 @@ export default function CreateServicePage() {
       type,
       iconName,
       gender,
-      assignedAdmin: type === 'appointment' ? assignedAdmin : undefined,
+      assignedAdmin,
       timeSlots: type === 'appointment' ? [...defaultTimeSlots] : undefined,
       status: 'Open', // Default to open
     };
@@ -134,6 +134,19 @@ export default function CreateServicePage() {
                     </Select>
                 </div>
               </div>
+
+               {type && (
+                 <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="assignedAdmin">Assigned Manager Email</Label>
+                    <Input 
+                      id="assignedAdmin" 
+                      placeholder="e.g., manager@example.com"
+                      value={assignedAdmin}
+                      onChange={(e) => setAssignedAdmin(e.target.value)}
+                      required 
+                    />
+                </div>
+              )}
               
                 {type === 'queue' && (
                     <div className="grid w-full items-center gap-1.5">
@@ -150,20 +163,6 @@ export default function CreateServicePage() {
                         </Select>
                     </div>
                 )}
-
-                {type === 'appointment' && (
-                     <div className="grid w-full items-center gap-1.5">
-                        <Label htmlFor="assignedAdmin">Assigned Admin Email</Label>
-                        <Input 
-                        id="assignedAdmin" 
-                        placeholder="e.g., admin1@example.com"
-                        value={assignedAdmin}
-                        onChange={(e) => setAssignedAdmin(e.target.value)}
-                        required 
-                        />
-                    </div>
-                )}
-
 
               <Button className="w-full mt-4" type="submit" disabled={loading}>
                 {loading ? 'Creating...' : 'Create Service'}
