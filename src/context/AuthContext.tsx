@@ -73,17 +73,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Helper to get all users from localStorage
   const getUsers = (): DemoUser[] => {
     const usersJson = localStorage.getItem(LOCAL_STORAGE_USERS_KEY);
-    if (usersJson) {
-      return JSON.parse(usersJson);
-    }
+    const existingUsers: DemoUser[] = usersJson ? JSON.parse(usersJson) : [];
     
-    // Initialize with default admins if not present
-    const initialAdmins: DemoUser[] = [
+    // Define the default admins
+    const defaultAdmins: DemoUser[] = [
       { uid: 'admin-super', email: SUPER_ADMIN_EMAIL, displayName: 'Administrator', password: 'password' },
       { uid: 'admin-appoint-1', email: 'admin1@example.com', displayName: 'Appointment Admin 1', password: '1234' }
     ];
-    localStorage.setItem(LOCAL_STORAGE_USERS_KEY, JSON.stringify(initialAdmins));
-    return initialAdmins;
+
+    // Create a map of existing users by email for quick lookup
+    const existingUserMap = new Map(existingUsers.map(u => [u.email, u]));
+
+    // Add default admins if they don't already exist
+    defaultAdmins.forEach(admin => {
+        if (!existingUserMap.has(admin.email)) {
+            existingUsers.push(admin);
+        }
+    });
+
+    // Save back to localStorage if we added any new admins
+    if (usersJson !== JSON.stringify(existingUsers)) {
+      localStorage.setItem(LOCAL_STORAGE_USERS_KEY, JSON.stringify(existingUsers));
+    }
+    
+    return existingUsers;
   };
 
   // Helper to save users to localStorage
