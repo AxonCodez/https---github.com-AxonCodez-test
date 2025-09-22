@@ -55,6 +55,25 @@ export const addService = (newService: Service): void => {
   localStorage.setItem(LOCAL_STORAGE_SERVICES_KEY, JSON.stringify(updatedServices));
 };
 
+// Function to update an existing service
+export const updateService = (updatedService: Service): void => {
+    if (typeof window === 'undefined') return;
+    const currentServices = getServices();
+    const serviceIndex = currentServices.findIndex(s => s.id === updatedService.id);
+    if (serviceIndex > -1) {
+        currentServices[serviceIndex] = updatedService;
+        localStorage.setItem(LOCAL_STORAGE_SERVICES_KEY, JSON.stringify(currentServices));
+    }
+};
+
+// Function to delete a service
+export const deleteService = (serviceId: string): void => {
+    if (typeof window === 'undefined') return;
+    const currentServices = getServices();
+    const updatedServices = currentServices.filter(s => s.id !== serviceId);
+    localStorage.setItem(LOCAL_STORAGE_SERVICES_KEY, JSON.stringify(updatedServices));
+};
+
 
 export const staff = [
   { id: 'hod-cse', name: 'Dr. John Smith', title: 'HOD - CSE Dept.' },
