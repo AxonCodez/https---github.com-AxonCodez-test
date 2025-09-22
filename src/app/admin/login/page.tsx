@@ -88,7 +88,13 @@ export default function AdminLoginPage() {
               <Button className="w-full" type="submit" disabled={loading}>
                 {loading ? 'Logging in...' : 'Login'}
               </Button>
-               <p className="text-center text-xs text-muted-foreground">
+              <p className="text-center text-xs text-muted-foreground">
+                Don't have an admin account?{' '}
+                <Link href="/admin/register" className="underline hover:text-primary">
+                  Register here
+                </Link>
+              </p>
+               <p className="text-center text-xs text-muted-foreground pt-4 border-t">
                 Not an admin?{' '}
                 <Link href="/login" className="underline hover:text-primary">
                   Login as a Student
