@@ -166,9 +166,9 @@ export default function ProfilePage() {
             </Button>
           </Link>
           <Link href="/appointments">
-            <Button size="icon" className="flex-col h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-lg -translate-y-6">
-              <Calendar className="w-7 h-7" />
-               <span className="text-xs -mb-2">Appointments</span>
+            <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-muted-foreground">
+              <Calendar className="w-6 h-6" />
+               <span className="text-xs">Appointments</span>
             </Button>
           </Link>
           <Link href="/queues">
