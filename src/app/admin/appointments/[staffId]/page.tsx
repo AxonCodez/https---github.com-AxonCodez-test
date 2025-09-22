@@ -1,24 +1,44 @@
-import { staff, appointments as mockAppointments } from '@/lib/data';
+
+"use client";
+import { getServices, appointments as mockAppointments } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Header } from '@/components/layout/Header';
 import { notFound } from 'next/navigation';
 import { Calendar, Clock, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function AdminAppointmentPage({ params }: { params: { staffId: string } }) {
   const { staffId } = params;
-  const staffMember = staff.find(s => s.id === staffId);
+  const [isClient, setIsClient] = useState(false);
+  const service = getServices().find(s => s.id === staffId);
 
-  if (!staffMember) {
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!service) {
     notFound();
   }
 
-  // NOTE: This is a Server Component, so it cannot access localStorage
-  // for appointments made by users in the current session. It only shows
-  // statically defined mock appointments. A real application would fetch
-  // this data from a database.
-  const todaysAppointments = [...(mockAppointments[staffId] || [])].sort((a, b) => {
-    // Basic time sorting for AM/PM
+  // NOTE: This component now also considers appointments made by users in the current session
+  // from localStorage, in addition to statically defined mock appointments.
+  const getAppointments = () => {
+    if (typeof window === 'undefined') {
+      return [...(mockAppointments[staffId] || [])];
+    }
+    const storedBookings: {time: string, studentId: string}[] = JSON.parse(localStorage.getItem(`appointments_${staffId}`) || '[]');
+    const userBookedAppointments = storedBookings.map(b => ({ time: b.time, student: b.studentId }));
+    
+    // Combine mock and localStorage appointments, removing duplicates
+    const allApts = [...(mockAppointments[staffId] || []), ...userBookedAppointments];
+    const uniqueApts = Array.from(new Set(allApts.map(a => a.time)))
+      .map(time => allApts.find(a => a.time === time)!);
+
+    return uniqueApts;
+  };
+  
+  const todaysAppointments = (isClient ? getAppointments() : [...(mockAppointments[staffId] || [])]).sort((a, b) => {
     const aTime = new Date(`1/1/2000 ${a.time}`);
     const bTime = new Date(`1/1/2000 ${b.time}`);
     return aTime.getTime() - bTime.getTime();
@@ -34,7 +54,7 @@ export default function AdminAppointmentPage({ params }: { params: { staffId: st
           </div>
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground font-headline">Today's Appointments</h1>
-            <p className="text-muted-foreground text-lg">{staffMember.name}</p>
+            <p className="text-muted-foreground text-lg">{service.name}</p>
           </div>
         </div>
 
@@ -42,7 +62,7 @@ export default function AdminAppointmentPage({ params }: { params: { staffId: st
           <CardHeader>
             <CardTitle>Booked Slots</CardTitle>
             <CardDescription>
-              Showing all pre-scheduled appointments for today.
+              Showing all scheduled appointments for today.
             </CardDescription>
           </CardHeader>
           <CardContent>

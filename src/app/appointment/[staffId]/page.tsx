@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, notFound, useRouter } from 'next/navigation';
-import { staff, timeSlots as allTimeSlots, appointments as mockAppointments } from '@/lib/data';
+import { getServices, timeSlots as allTimeSlots, appointments as mockAppointments } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, CheckCircle, Clock } from 'lucide-react';
@@ -26,10 +26,10 @@ type Appointment = { time: string; studentId: string };
 export default function AppointmentPage() {
   const params = useParams();
   const staffId = params.staffId as string;
-  const staffMember = staff.find(s => s.id === staffId);
   const { user } = useAuth();
   const router = useRouter();
   
+  const [service, setService] = useState<ReturnType<typeof getServices>[0] | undefined>();
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [confirmedBooking, setConfirmedBooking] = useState<{ time: string } | null>(null);
@@ -37,6 +37,7 @@ export default function AppointmentPage() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setService(getServices().find(s => s.id === staffId));
     setIsClient(true);
     // In a real app, fetch booked slots from an API.
     // For demo, we use localStorage to persist bookings for the session.
@@ -57,7 +58,7 @@ export default function AppointmentPage() {
   const handleConfirmBooking = () => {
     if (!selectedSlot || !user) return;
 
-    const newBooking: Appointment = { time: selectedSlot, studentId: user.uid };
+    const newBooking: Appointment = { time: selectedSlot, studentId: user.registrationNumber || user.displayName || user.uid };
     const storedBookings: Appointment[] = JSON.parse(localStorage.getItem(`appointments_${staffId}`) || '[]');
     localStorage.setItem(`appointments_${staffId}`, JSON.stringify([...storedBookings, newBooking]));
     
@@ -67,8 +68,13 @@ export default function AppointmentPage() {
     setSelectedSlot(null);
   };
   
-  if (!staffMember) {
+  if (service && service.type !== 'appointment') {
     notFound();
+  }
+  
+  // This check has to be after the service type check
+  if (!service) {
+    return notFound();
   }
 
   if (confirmedBooking) {
@@ -80,8 +86,8 @@ export default function AppointmentPage() {
             <CardContent className="p-8">
               <CheckCircle className="h-16 w-16 text-success mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-foreground font-headline">Appointment Confirmed!</h2>
-              <p className="text-muted-foreground mt-2">You are scheduled to meet with</p>
-              <p className="font-semibold text-lg text-primary">{staffMember.name}</p>
+              <p className="text-muted-foreground mt-2">You are scheduled for</p>
+              <p className="font-semibold text-lg text-primary">{service.name}</p>
               <div className="mt-6 bg-muted p-4 rounded-lg">
                 <div className="flex items-center justify-center gap-2">
                   <CalendarDays className="h-5 w-5 text-muted-foreground" />
@@ -110,7 +116,7 @@ export default function AppointmentPage() {
           <Card className="w-full max-w-2xl shadow-xl">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-headline">Book an Appointment</CardTitle>
-              <CardDescription>with {staffMember.name} ({staffMember.title})</CardDescription>
+              <CardDescription>with {service.name}</CardDescription>
             </CardHeader>
             <CardContent>
               <h3 className="text-lg font-semibold text-center mb-6">Available Time Slots for Today</h3>
@@ -140,7 +146,7 @@ export default function AppointmentPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Your Appointment</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to book an appointment with {staffMember.name} at {selectedSlot} today?
+              Are you sure you want to book an appointment for {service.name} at {selectedSlot} today?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
