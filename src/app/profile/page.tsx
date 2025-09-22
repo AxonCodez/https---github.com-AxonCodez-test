@@ -8,9 +8,10 @@ import { Header } from '@/components/layout/Header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, ChevronRight, Home as HomeIcon, LogOut, Plus, Search, User as UserIcon } from 'lucide-react';
+import { Home as HomeIcon, LogOut, Plus, Search, User as UserIcon, Save, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,40 +20,53 @@ export default function ProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
   
-  const [gender, setGender] = useState(user?.gender || '');
+  const [displayName, setDisplayName] = useState('');
+  const [registrationNumber, setRegistrationNumber] = useState('');
+  const [gender, setGender] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
     }
     if (user) {
+      setDisplayName(user.displayName || '');
+      setRegistrationNumber(user.registrationNumber || '');
       setGender(user.gender || '');
     }
   }, [user, loading, router]);
-  
-  const handleGenderChange = async (newGender: string) => {
+
+  const handleSaveChanges = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!user) return;
-    setGender(newGender);
-    const success = await updateUser({ gender: newGender });
+    setIsSaving(true);
+    
+    const success = await updateUser({ 
+      displayName, 
+      registrationNumber, 
+      gender 
+    });
+    
     if (success) {
       toast({
         title: "Profile Updated",
-        description: "Your gender has been successfully updated.",
+        description: "Your details have been successfully saved.",
       });
     } else {
-       toast({
+      toast({
         variant: "destructive",
         title: "Update Failed",
         description: "Could not update your profile. Please try again.",
       });
     }
+    setIsSaving(false);
   };
 
   const getInitials = (email: string | null | undefined) => {
     if (!email) return '';
     const name = user?.displayName || email;
     const parts = name.split(' ');
-    if (parts.length > 1) {
+    if (parts.length > 1 && parts[0] && parts[1]) {
       return parts[0][0] + parts[1][0];
     }
     return name.substring(0, 2).toUpperCase();
@@ -89,35 +103,45 @@ export default function ProfilePage() {
             <CardTitle>Account Settings</CardTitle>
             <CardDescription>Manage your profile and settings.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid w-full max-w-sm items-center gap-1.5">
-              <Label htmlFor="gender">Gender</Label>
-              <Select value={gender} onValueChange={handleGenderChange}>
-                <SelectTrigger id="gender">
-                  <SelectValue placeholder="Select your gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                  <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-2">
-               <Button variant="outline" className="justify-between" disabled>
-                <span>Edit Profile</span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <CardContent>
+            <form onSubmit={handleSaveChanges} className="space-y-6">
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="displayName">Full Name</Label>
+                <Input 
+                  id="displayName"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Your full name"
+                />
+              </div>
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="registrationNumber">Registration Number</Label>
+                <Input 
+                  id="registrationNumber"
+                  value={registrationNumber}
+                  onChange={(e) => setRegistrationNumber(e.target.value)}
+                  placeholder="e.g., 25BCEXXXX"
+                />
+              </div>
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="gender">Gender</Label>
+                <Select value={gender} onValueChange={setGender}>
+                  <SelectTrigger id="gender">
+                    <SelectValue placeholder="Select your gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" disabled={isSaving} className="w-full">
+                <Save className="mr-2 h-4 w-4" />
+                {isSaving ? 'Saving...' : 'Save Changes'}
               </Button>
-               <Button variant="outline" className="justify-between" disabled>
-                <span>Notifications</span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </Button>
-               <Button variant="outline" className="justify-between" disabled>
-                <span>Privacy</span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </div>
+            </form>
           </CardContent>
         </Card>
 

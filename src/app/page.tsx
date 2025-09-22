@@ -118,12 +118,12 @@ export default function Home() {
           <h1 className="text-3xl font-bold">{user?.displayName || 'Guest'}</h1>
         </div>
 
-        {user && !user.gender && (
+        {user && (!user.gender || !user.registrationNumber) && (
           <Alert className="bg-accent/90 border-accent-foreground/20 text-accent-foreground">
             <AlertTitle className="font-bold">Complete Your Profile</AlertTitle>
             <AlertDescription>
               <div className="flex justify-between items-center">
-                <p>Please set your gender to personalize your experience.</p>
+                <p>Please set your details to personalize your experience.</p>
                 <Link href="/profile">
                   <Button variant="link" className="p-0 h-auto text-accent-foreground font-bold">
                     Go to Profile

@@ -17,6 +17,7 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [registrationNumber, setRegistrationNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    const success = await register(name, email, password);
+    const success = await register(name, email, password, registrationNumber);
 
     if (success) {
       toast({
@@ -80,6 +81,17 @@ export default function RegisterPage() {
                   placeholder="John Doe"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  required 
+                />
+              </div>
+               <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="registrationNumber">Registration Number</Label>
+                <Input 
+                  type="text" 
+                  id="registrationNumber" 
+                  placeholder="25BCEXXXX"
+                  value={registrationNumber}
+                  onChange={(e) => setRegistrationNumber(e.target.value)}
                   required 
                 />
               </div>

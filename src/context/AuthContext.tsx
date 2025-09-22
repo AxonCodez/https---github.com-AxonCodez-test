@@ -13,6 +13,7 @@ export type UserData = {
   displayName: string;
   photoURL?: string;
   gender?: string;
+  registrationNumber?: string;
 };
 
 // Define the shape of our user object in storage
@@ -25,7 +26,7 @@ interface AuthContextType {
   isAdmin: boolean;
   loading: boolean;
   login: (email: string, pass: string) => Promise<boolean>;
-  register: (name: string, email: string, pass: string) => Promise<boolean>;
+  register: (name: string, email: string, pass: string, regNo: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (updates: Partial<UserData>) => Promise<boolean>;
 }
@@ -95,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return false;
   };
 
-  const register = async (name: string, email: string, pass: string): Promise<boolean> => {
+  const register = async (name: string, email: string, pass: string, regNo: string): Promise<boolean> => {
     // Enforce student email domain and prevent registering admin emails
     if (!email.endsWith(STUDENT_EMAIL_DOMAIN) || ADMIN_EMAILS.includes(email)) {
       return false;
@@ -112,6 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       displayName: name,
       password: pass,
       gender: '', // Initialize gender as empty
+      registrationNumber: regNo,
     };
 
     saveUsers([...users, newUser]);
@@ -143,7 +145,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userIndex = users.findIndex(u => u.uid === user.uid);
     if (userIndex > -1) {
       const dbUser = users[userIndex];
-      users[userIndex] = { ...dbUser, ...updates };
+      // Create a new object for the updated user, ensuring password is not overwritten if it exists
+      const updatedDbUser = { ...dbUser, ...updates };
+      users[userIndex] = updatedDbUser;
       saveUsers(users);
       return true;
     }
