@@ -29,7 +29,7 @@ export default function AppointmentPage() {
   const { user } = useAuth();
   const router = useRouter();
   
-  const [service, setService] = useState<ReturnType<typeof getServices>[0] | undefined>();
+  const [service, setService] = useState<ReturnType<typeof getServices>[0] | undefined | null>(undefined);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [confirmedBooking, setConfirmedBooking] = useState<{ time: string } | null>(null);
@@ -37,7 +37,7 @@ export default function AppointmentPage() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setService(getServices().find(s => s.id === staffId));
+    setService(getServices().find(s => s.id === staffId) || null);
     setIsClient(true);
     // In a real app, fetch booked slots from an API.
     // For demo, we use localStorage to persist bookings for the session.
@@ -67,14 +67,20 @@ export default function AppointmentPage() {
     setShowConfirmDialog(false);
     setSelectedSlot(null);
   };
-  
-  if (service && service.type !== 'appointment') {
-    notFound();
+
+  if (service === undefined) {
+    return (
+        <div className="flex flex-col min-h-screen">
+            <Header />
+            <main className="flex-1 container mx-auto p-4 md:p-8 flex justify-center">
+                <p>Loading...</p>
+            </main>
+        </div>
+    );
   }
   
-  // This check has to be after the service type check
-  if (!service) {
-    return notFound();
+  if (service === null || service.type !== 'appointment') {
+    notFound();
   }
 
   if (confirmedBooking) {
