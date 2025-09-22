@@ -6,7 +6,7 @@ import { getServices, serviceIcons, Service } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import Link from 'next/link';
-import { Ticket, ArrowRight, UserCheck, Home as HomeIcon, Search, Plus, BarChart3, User as UserIcon } from 'lucide-react';
+import { Ticket, ArrowRight, UserCheck, Home as HomeIcon, Search, Calendar, BarChart3, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import type { Queue, QueueUser } from '@/context/QueueContext';
@@ -144,9 +144,12 @@ export default function QueuesPage() {
               <span className="text-xs">Search</span>
             </Button>
           </Link>
-          <Button size="icon" className="h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-lg -translate-y-6">
-            <Plus className="w-8 h-8" />
-          </Button>
+          <Link href="/appointments">
+            <Button size="icon" className="flex-col h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-lg -translate-y-6">
+              <Calendar className="w-7 h-7" />
+               <span className="text-xs -mb-2">Appointments</span>
+            </Button>
+          </Link>
           <Link href="/queues">
             <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-primary">
               <BarChart3 className="w-6 h-6" />

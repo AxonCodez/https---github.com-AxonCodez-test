@@ -6,7 +6,7 @@ import { getServices, serviceIcons, Service } from '@/lib/data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/layout/Header';
 import Link from 'next/link';
-import { ArrowRight, BarChart3, Home as HomeIcon, Plus, Search as SearchIcon, User as UserIcon } from 'lucide-react';
+import { ArrowRight, BarChart3, Home as HomeIcon, Calendar, Search as SearchIcon, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function SearchPage() {
@@ -64,9 +64,12 @@ export default function SearchPage() {
               <span className="text-xs">Search</span>
             </Button>
           </Link>
-          <Button size="icon" className="h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-lg -translate-y-6">
-            <Plus className="w-8 h-8" />
-          </Button>
+          <Link href="/appointments">
+            <Button size="icon" className="flex-col h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-lg -translate-y-6">
+              <Calendar className="w-7 h-7" />
+               <span className="text-xs -mb-2">Appointments</span>
+            </Button>
+          </Link>
           <Link href="/queues">
             <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-muted-foreground">
               <BarChart3 className="w-6 h-6" />

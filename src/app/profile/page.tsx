@@ -8,7 +8,7 @@ import { Header } from '@/components/layout/Header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Home as HomeIcon, LogOut, Plus, Search, User as UserIcon, Save, BarChart3 } from 'lucide-react';
+import { Home as HomeIcon, LogOut, Calendar, Search, User as UserIcon, Save, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -165,9 +165,12 @@ export default function ProfilePage() {
               <span className="text-xs">Search</span>
             </Button>
           </Link>
-          <Button size="icon" className="h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-lg -translate-y-6">
-            <Plus className="w-8 h-8" />
-          </Button>
+          <Link href="/appointments">
+            <Button size="icon" className="flex-col h-16 w-16 rounded-full bg-primary text-primary-foreground shadow-lg -translate-y-6">
+              <Calendar className="w-7 h-7" />
+               <span className="text-xs -mb-2">Appointments</span>
+            </Button>
+          </Link>
           <Link href="/queues">
             <Button variant="ghost" size="icon" className="flex-col h-16 w-16 gap-1 text-muted-foreground">
               <BarChart3 className="w-6 h-6" />
