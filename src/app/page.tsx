@@ -43,6 +43,18 @@ export default function Home() {
   const [activeTokens, setActiveTokens] = useState<{ serviceId: string; token: number }[]>([]);
   const [queueStatus, setQueueStatus] = useState<QueueStatus>({});
   const [queueServices, setQueueServices] = useState<Service[]>([]);
+  const [greeting, setGreeting] = useState({ text: 'GOOD MORNING', emoji: '☀️' });
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) {
+      setGreeting({ text: 'GOOD MORNING', emoji: '☀️' });
+    } else if (hour < 18) {
+      setGreeting({ text: 'GOOD AFTERNOON', emoji: '🌤️' });
+    } else {
+      setGreeting({ text: 'GOOD EVENING', emoji: '🌙' });
+    }
+  }, []);
 
   useEffect(() => {
     // Filter queue services based on user gender
@@ -101,7 +113,7 @@ export default function Home() {
       <main className="flex-1 p-4 md:p-6 space-y-6">
         <div className="text-background">
           <p className="text-lg font-light flex items-center gap-2">
-            <span className="text-yellow-400">☀️</span> GOOD MORNING
+            <span className="text-yellow-400">{greeting.emoji}</span> {greeting.text}
           </p>
           <h1 className="text-3xl font-bold">{user?.displayName || 'Guest'}</h1>
         </div>
