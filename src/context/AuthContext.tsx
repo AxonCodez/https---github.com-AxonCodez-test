@@ -41,6 +41,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 const ADMIN_EMAILS = ['admin@example.com'];
+const STUDENT_EMAIL_DOMAIN = '@vitstudent.ac.in';
 const LOCAL_STORAGE_USERS_KEY = 'demo_users';
 const LOCAL_STORAGE_SESSION_KEY = 'demo_session';
 
@@ -82,6 +83,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const foundUser = users.find(u => u.email === email && u.password === pass);
 
     if (foundUser) {
+      // Admins can log in, students must have the correct email domain
+      if (!ADMIN_EMAILS.includes(email) && !email.endsWith(STUDENT_EMAIL_DOMAIN)) {
+        return false;
+      }
       const { password, ...userToSave } = foundUser;
       setUser(userToSave);
       localStorage.setItem(LOCAL_STORAGE_SESSION_KEY, JSON.stringify(userToSave));
@@ -91,6 +96,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (name: string, email: string, pass: string): Promise<boolean> => {
+    // Enforce student email domain and prevent registering admin emails
+    if (!email.endsWith(STUDENT_EMAIL_DOMAIN) || ADMIN_EMAILS.includes(email)) {
+      return false;
+    }
+    
     const users = getUsers();
     if (users.some(u => u.email === email)) {
       return false; // User already exists

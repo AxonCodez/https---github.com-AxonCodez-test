@@ -43,7 +43,7 @@ export default function RegisterPage() {
       toast({
         variant: "destructive",
         title: "Registration Failed",
-        description: "A user with this email already exists.",
+        description: "Please use a valid 'vitstudent.ac.in' email or check if the account already exists.",
       });
     }
 
@@ -88,7 +88,7 @@ export default function RegisterPage() {
                 <Input 
                   type="email" 
                   id="email" 
-                  placeholder="student@example.com"
+                  placeholder="student@vitstudent.ac.in"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required 
