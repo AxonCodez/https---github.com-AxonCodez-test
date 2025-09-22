@@ -128,7 +128,9 @@ export default function Home() {
               <div>
                 <p className="text-xs font-semibold text-white/80">FEATURED</p>
                 <p className="font-medium mt-1">Meet your staff, proctor or HOD</p>
-                 <Button variant="link" className="p-0 h-auto text-white/90 mt-2">Book an appointment</Button>
+                <Link href="/search">
+                   <Button variant="link" className="p-0 h-auto text-white/90 mt-2">Book an appointment</Button>
+                </Link>
               </div>
               <BookUser className="w-16 h-16 text-white/30" />
             </CardContent>
